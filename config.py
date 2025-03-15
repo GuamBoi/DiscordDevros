@@ -13,4 +13,4 @@ OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")
 OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")
 
 # Fetch the model name for the LLM
-MODEL_NAME = os.getenv("MODEL_NAME", "default_model_name")  # Set a default if not provided
+MODEL_NAME = os.getenv("MODEL_NAME")
