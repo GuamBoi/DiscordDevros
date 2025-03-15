@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from llm_api import query_llm
+from utils.llm_api import query_llm
 
 class AskLLMCog(commands.Cog):
     def __init__(self, bot):
