@@ -1,24 +1,22 @@
+import os
 import discord
 from discord.ext import commands
-import config
-import os
-from dotenv import load_dotenv
+from config import COMMAND_PREFIX, DISCORD_BOT_TOKEN
 
-load_dotenv()
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
-# Define bot with command prefix
-bot = commands.Bot(command_prefix=config.PREFIX, intents=discord.Intents.all())
-
-# Load cogs dynamically
-def load_cogs():
-    for filename in os.listdir("cogs"):
+# Load all cogs (commands) dynamically
+async def load_cogs():
+    for filename in os.listdir("./cogs"):
         if filename.endswith(".py") and filename != "__init__.py":
-            bot.load_extension(f"cogs.{filename[:-3]}")
+            await bot.load_extension(f"cogs.{filename[:-3]}")
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user}')
+    print(f"Logged in as {bot.user}")
+    await load_cogs()
+    print("Cogs Loaded Successfully!")
 
-# Load cogs before running the bot
-load_cogs()
-bot.run(config.TOKEN)
+# Run the bot
+bot.run(DISCORD_BOT_TOKEN)
