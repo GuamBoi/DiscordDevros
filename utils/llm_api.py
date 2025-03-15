@@ -1,5 +1,5 @@
 import aiohttp
-from config import OPENWEBUI_API_URL, OPENWEBUI_API_KEY
+from config import OPENWEBUI_API_URL, OPENWEBUI_API_KEY, MODEL_NAME
 
 async def query_llm(prompt):
     """Send a request to the LLM API and return the generated response."""
@@ -12,7 +12,7 @@ async def query_llm(prompt):
     }
 
     data = {
-        "model": "your_model_name",  # Specify the model you want to use
+        "model": MODEL_NAME,  # Use the model from the config
         "messages": [
             {"role": "user", "content": prompt}
         ]
