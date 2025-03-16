@@ -1,7 +1,7 @@
 
 # DiscordDevros
 
-A Discord bot structured with a modular command system using cogs.
+A Discord bot structured with a modular command system that can be easily integrated into an Open WebUI Server for more natural respnces from the bot. 
 
 ## Bot File Structure
 ```
