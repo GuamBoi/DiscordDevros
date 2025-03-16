@@ -18,7 +18,7 @@ class WelcomeCog(commands.Cog):
             'Content-Type': 'application/json'
         }
 
-        prompt = f"Welcome {username} to the discord server! Please provide a personalized welcome message for them that includes their name."
+        prompt = f"Welcome {username} to the discord server! Please provide a personalized welcome message for them to be included AFTER their name in the discord server."
 
         data = {
             "model": MODEL_NAME,
