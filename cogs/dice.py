@@ -13,7 +13,10 @@ class DiceCog(commands.Cog):
     # Helper function to generate a concise LLM message
     async def generate_roll_message(self, dice_type, roll_result):
         prompt = (
-            f"Generate a short and witty response for rolling a {dice_type} with a result of {roll_result}. Format it exactly like this: 'You rolled a {dice_type} and got a {roll_result}! [Witty remark]'. Keep it short and no longer than 1 sentence."
+            f"Generate a short and witty response for rolling a {dice_type} "
+            f"with a result of {roll_result}. Format it exactly like this: "
+            f"'You rolled a {dice_type} and got a {roll_result}! [Witty remark]' "
+            f"Keep it short and no longer than 1 sentence."
         )
         try:
             response = await query_llm(prompt)
@@ -23,10 +26,12 @@ class DiceCog(commands.Cog):
         except Exception as e:
             return f"You rolled a {dice_type} and got a {roll_result}! (Error generating witty remark: {e})"
 
-    # Generalized dice roll command
+    # Generalized dice roll command with typing indicator
     async def roll_dice(self, ctx, dice_type, max_value, color):
-        roll_result = random.randint(1, max_value)
-        response = await self.generate_roll_message(dice_type, roll_result)
+        async with ctx.typing():  # Show typing indicator while processing
+            roll_result = random.randint(1, max_value)
+            response = await self.generate_roll_message(dice_type, roll_result)
+
         embed = create_embed(
             title=f"{dice_type} Roll",
             description=f"🎲 {response}",
