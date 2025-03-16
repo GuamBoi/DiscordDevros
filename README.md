@@ -1,5 +1,22 @@
+
 # DiscordDevros
-An Open WebUI Server intergrated with a Discord bot for more natural responces
+
+A Discord bot structured with a modular command system using cogs.
+
+## Bot File Structure
+```
+DiscordDevros/
+│── bot.py                  # Main bot file (loads commands dynamically)
+│── config.py               # Loads API keys and settings from .env
+│── .env                    # Stores bot token, prefix, and API info
+│── utils/
+│   ├── llm_api.py          # Handles communication with the LLM API
+│── cogs/                   # Folder for command files
+│   ├── __init__.py         # Makes cogs a package
+│   ├── get_word.py         # Command for getting a random word
+│── requirements.txt        # Dependencies
+│── README.md               # Documentation
+```
 
 ## Features
 - Uses cogs for modular command handling
@@ -10,23 +27,36 @@ An Open WebUI Server intergrated with a Discord bot for more natural responces
 
 ### 1. Clone the Repository
 ```sh
-git clone https://github.com/GuamBoi/DiscordDevros.git
+git clone git@github.com:GuamBoi/DiscordDevros.git
 cd DiscordDevros
 ```
 
-### 2. Install Dependencies
+### 2. Set Up a Virtual Environment
+Create a virtual environment to isolate the bot's dependencies:
+```sh
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+Once the virtual environment is activated, install the required Python dependencies:
 ```sh
 pip install -r requirements.txt
 ```
 
-### 3. Setup Environment Variables
+### 4. Setup Environment Variables
 Create a `.env` file in the root directory and add your bot token and command prefix:
-```
-DISCORD_BOT_TOKEN=your_token_here
-COMMAND_PREFIX=!
+```bash
+nano .env
 ```
 
-### 4. Run the Bot
+```
+DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
+OPENWEBUI_API_URL=http://YOUR_PI_IP_ADDRESS:PORT/api/chat/completions
+OPENWEBUI_API_KEY=YOUR_OPEN_WEBUI_API_KEY
+```
+### 5. Run the Bot
+After setting up the environment, run the bot:
 ```sh
 python bot.py
 ```
@@ -49,17 +79,10 @@ async def setup(bot):
     await bot.add_cog(Example(bot))
 ```
 
-## Bot File Structure
-```
-GuamsServerBot/
-│── bot.py                  # Main bot file (entry point)
-│── config.py               # Configuration file (loads environment variables)
-│── .env                    # Stores bot token and command prefix (not committed to Git)
-│── cogs/                   # Folder for command files
-│   ├── __init__.py         # Makes cogs a package
-│   ├── example.py          # Example command file
-│── requirements.txt        # Dependencies
-│── README.md               # Project documentation
+## Removing the Bot
+```bash
+sudo chown -R $USER:$USER ~/DiscordDevros
+rm -rf ~/DiscordDevros
 ```
 
 ## Notes
