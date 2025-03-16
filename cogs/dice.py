@@ -12,7 +12,7 @@ class DiceCog(commands.Cog):
 
     # Helper function to generate the LLM message
     async def generate_roll_message(self, dice_type, roll_result):
-        prompt = f"Generate a fun and creative response for a roll of a {dice_type} with the result {roll_result}. Make it interesting and engaging!"
+        prompt = f"Generate a fun and creative response for a roll of a {dice_type} with the result {roll_result}. Example Responce: You rolled a {dice_type}, and got a {roll_result}!"
         try:
             response = await query_llm(prompt)
             return response
