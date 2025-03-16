@@ -1,5 +1,6 @@
 # cogs/dice.py
 
+import discord
 import random
 from discord.ext import commands
 from utils.llm_api import query_llm  # Import the query_llm function
