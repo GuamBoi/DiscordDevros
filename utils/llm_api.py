@@ -12,7 +12,7 @@ async def query_llm(prompt):
     }
 
     data = {
-        "model": MODEL_NAME,  # Use the model from the config
+        "model": MODEL_NAME,  # Uses the model from the config
         "messages": [
             {"role": "user", "content": prompt}
         ]
