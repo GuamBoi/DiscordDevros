@@ -23,7 +23,9 @@ async def query_llm(prompt):
             async with session.post(OPENWEBUI_API_URL, json=data, headers=headers) as response:
                 if response.status == 200:
                     json_data = await response.json()
-                    return json_data.get("generated_text", "No response generated.")
+                    print("API Response:", json_data)  # Debugging line to see the full response
+                    # Assuming OpenWebUI returns "choices" with a "message" object in its response
+                    return json_data.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
                 else:
                     return f"API Error: {response.status}"
     except Exception as e:
