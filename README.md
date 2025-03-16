@@ -115,7 +115,3 @@ async def setup(bot):
 sudo chown -R $USER:$USER ~/DiscordDevros
 rm -rf ~/DiscordDevros
 ```
-
-## Notes
-- Ensure your `.env` file is not shared or pushed to GitHub to keep your bot token secure.
-- You can change the bot’s prefix in the `.env` file by modifying `COMMAND_PREFIX=your_prefix_here`.
