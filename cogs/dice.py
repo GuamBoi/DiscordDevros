@@ -10,32 +10,36 @@ class DiceCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Helper function to generate a concise LLM message
-    async def generate_roll_message(self, dice_type, roll_result):
+    # Helper function to generate an AI reaction to the roll result
+    async def generate_roll_reaction(self, dice_type, roll_result, max_value):
         prompt = (
-            f"Generate a short and witty response for rolling a {dice_type} "
-            f"with a result of {roll_result}. Format it exactly like this: "
-            f"'You rolled a {dice_type} and got a {roll_result}! [Witty remark]' "
-            f"Keep it short and no longer than 1 sentence. If the rolled number is better "
-            f"than half of what's possible provide a Happy remark, and vice versa."
+            f"You are an enthusiastic tabletop RPG companion. A user rolled a {dice_type} and got {roll_result} "
+            f"out of a possible {max_value}. React with a short, fun message to their roll. "
+            f"If the result is high, make it exciting. If it's low, make it lighthearted but funny. "
+            f"Examples:\n"
+            f"- 'Oof, tough luck! Maybe next time!'\n"
+            f"- 'Critical success! You're on fire!'\n"
+            f"- 'A solid roll! Let’s see what happens next!'\n"
+            f"Limit your response to a single short sentence."
         )
         try:
             response = await query_llm(prompt)
-            if not response.startswith(f"You rolled a {dice_type} and got a {roll_result}"):
-                response = f"You rolled a {dice_type} and got a {roll_result}! Nice roll!"
             return response
-        except Exception as e:
-            return f"You rolled a {dice_type} and got a {roll_result}! (Error generating witty remark: {e})"
+        except Exception:
+            return "Interesting roll! Let's see where this leads."
 
     # Generalized dice roll command with typing indicator
     async def roll_dice(self, ctx, dice_type, max_value, color):
         async with ctx.typing():  # Show typing indicator while processing
             roll_result = random.randint(1, max_value)
-            response = await self.generate_roll_message(dice_type, roll_result)
+            reaction = await self.generate_roll_reaction(dice_type, roll_result, max_value)
+
+        # Static message + AI-generated reaction
+        roll_message = f"{ctx.author.mention} rolled a **{dice_type}** and got **{roll_result}**!\n🎲 {reaction}"
 
         embed = create_embed(
             title=f"{dice_type} Roll",
-            description=f"🎲 {response}",
+            description=roll_message,
             color=color,
             footer_text=f"Rolled a {dice_type}"
         )
