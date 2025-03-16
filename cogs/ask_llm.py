@@ -15,6 +15,6 @@ class AskLLMCog(commands.Cog):
         except Exception as e:
             await ctx.send(f"An error occurred: {e}")
 
-# Synchronous setup function (no 'await' needed)
-def setup(bot):
-    bot.add_cog(AskLLMCog(bot))
+# The setup function must be asynchronous!
+async def setup(bot):
+    await bot.add_cog(AskLLMCog(bot))
