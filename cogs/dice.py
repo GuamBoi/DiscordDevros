@@ -16,7 +16,8 @@ class DiceCog(commands.Cog):
             f"Generate a short and witty response for rolling a {dice_type} "
             f"with a result of {roll_result}. Format it exactly like this: "
             f"'You rolled a {dice_type} and got a {roll_result}! [Witty remark]' "
-            f"Keep it short and no longer than 1 sentence."
+            f"Keep it short and no longer than 1 sentence. If the rolled number is better "
+            f"than half of what's possible provide a Happy remark, and vice versa."
         )
         try:
             response = await query_llm(prompt)
@@ -48,23 +49,23 @@ class DiceCog(commands.Cog):
 
     @commands.command()
     async def d6(self, ctx):
-        await self.roll_dice(ctx, "D6", 6, discord.Color.green())
+        await self.roll_dice(ctx, "D6", 6, discord.Color.blue())
 
     @commands.command()
     async def d8(self, ctx):
-        await self.roll_dice(ctx, "D8", 8, discord.Color.orange())
+        await self.roll_dice(ctx, "D8", 8, discord.Color.blue())
 
     @commands.command()
     async def d10(self, ctx):
-        await self.roll_dice(ctx, "D10", 10, discord.Color.purple())
+        await self.roll_dice(ctx, "D10", 10, discord.Color.blue())
 
     @commands.command()
     async def d12(self, ctx):
-        await self.roll_dice(ctx, "D12", 12, discord.Color.red())
+        await self.roll_dice(ctx, "D12", 12, discord.Color.blue())
 
     @commands.command()
     async def d20(self, ctx):
-        await self.roll_dice(ctx, "D20", 20, discord.Color.gold())
+        await self.roll_dice(ctx, "D20", 20, discord.Color.blue())
 
 async def setup(bot):
     await bot.add_cog(DiceCog(bot))
