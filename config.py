@@ -1,16 +1,14 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file.
 load_dotenv()
 
-# Fetch bot settings
-DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-COMMAND_PREFIX = os.getenv("COMMAND_PREFIX", "?")
+# Sensitive settings (Change these in the .env file only)
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")        # Pulled from your .env file
+OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")        # Pulled from your .env file
+OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")        # Pulled from your .env file
 
-# Fetch OpenWebUI API settings
-OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")
-OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")
-
-# Fetch the model name for the LLM
-MODEL_NAME = os.getenv("MODEL_NAME")
+# Non-sensitive settings (Additional bot settings that are okay to share)
+COMMAND_PREFIX = "!"                                      # Change this value if you want a different prefix.
+MODEL_NAME = "devros-mini"                                # Set your desired model name here.
