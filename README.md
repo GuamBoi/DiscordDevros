@@ -6,6 +6,7 @@ A Discord bot structured with a modular command system using cogs.
 ## Bot File Structure
 ```
 DiscordDevros/
+│
 ├── cogs/                   # Folder for command files
 │   ├── __init__.py         # Makes cogs a package
 │   ├── ask.py              # Ask your Pi LLM a question (Ai)
