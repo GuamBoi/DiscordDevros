@@ -3,7 +3,11 @@ import discord
 from discord.ext import commands
 from config import COMMAND_PREFIX, DISCORD_BOT_TOKEN
 
+# Create intents object and enable the message content intent
 intents = discord.Intents.default()
+intents.message_content = True  # Enable the message content intent
+
+# Create bot instance with the correct intents
 bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
 # Load all cogs (commands) dynamically
