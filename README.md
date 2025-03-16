@@ -10,6 +10,7 @@ DiscordDevros/
 │   ├── __init__.py         # Makes cogs a package
 │   ├── ask.py              # Ask your Pi LLM a question (Ai)
 │   └── wordle.py           # Commands for starting / guessing in wordle (Ai)
+│
 ├── utils/
 │   └── llm_api.py          # Handles connection with Open WebUI's API
 │
