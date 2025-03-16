@@ -11,4 +11,7 @@ OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")        # Pulled from your .en
 
 # Non-sensitive settings (Additional bot settings that are okay to share)
 COMMAND_PREFIX = "!"                                      # Change this value if you want a different prefix.
-MODEL_NAME = "devros-mini"                                # Set your model name here.
+MODEL_NAME = "YOUR_MODEL_NAME"                            # Set your model name here.
+
+# Channel Specifications
+WORDLE_CHANNEL = YOUR_CHANNEL_ID                          # Change to your Wordle Channels ID
