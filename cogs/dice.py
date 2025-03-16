@@ -10,14 +10,18 @@ class DiceCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Helper function to generate the LLM message
+    # Helper function to generate a concise LLM message
     async def generate_roll_message(self, dice_type, roll_result):
-        prompt = f"Generate a fun and creative response for a roll of a {dice_type} with the result {roll_result}. Example Responce: You rolled a {dice_type}, and got a {roll_result}!"
+        prompt = (
+            f"Generate a short and witty response for rolling a {dice_type} with a result of {roll_result}. Format it exactly like this: 'You rolled a {dice_type} and got a {roll_result}! [Witty remark]'. Keep it short and no longer than 1 sentence."
+        )
         try:
             response = await query_llm(prompt)
+            if not response.startswith(f"You rolled a {dice_type} and got a {roll_result}"):
+                response = f"You rolled a {dice_type} and got a {roll_result}! Nice roll!"
             return response
         except Exception as e:
-            return f"An error occurred while generating the response: {e}"
+            return f"You rolled a {dice_type} and got a {roll_result}! (Error generating witty remark: {e})"
 
     # Generalized dice roll command
     async def roll_dice(self, ctx, dice_type, max_value, color):
@@ -39,23 +43,23 @@ class DiceCog(commands.Cog):
 
     @commands.command()
     async def d6(self, ctx):
-        await self.roll_dice(ctx, "D6", 6, discord.Color.blue())
+        await self.roll_dice(ctx, "D6", 6, discord.Color.green())
 
     @commands.command()
     async def d8(self, ctx):
-        await self.roll_dice(ctx, "D8", 8, discord.Color.blue())
+        await self.roll_dice(ctx, "D8", 8, discord.Color.orange())
 
     @commands.command()
     async def d10(self, ctx):
-        await self.roll_dice(ctx, "D10", 10, discord.Color.blue())
+        await self.roll_dice(ctx, "D10", 10, discord.Color.purple())
 
     @commands.command()
     async def d12(self, ctx):
-        await self.roll_dice(ctx, "D12", 12, discord.Color.blue())
+        await self.roll_dice(ctx, "D12", 12, discord.Color.red())
 
     @commands.command()
     async def d20(self, ctx):
-        await self.roll_dice(ctx, "D20", 20, discord.Color.blue())
+        await self.roll_dice(ctx, "D20", 20, discord.Color.gold())
 
 async def setup(bot):
     await bot.add_cog(DiceCog(bot))
