@@ -92,9 +92,16 @@ After setting up the environment, run the bot:
 python bot.py
 ```
 
+### 5. Run the Bot
+After setting up the environment, run the bot:
+```sh
+python bot.py
+```
+
 ## Adding Commands
 To add a new command, create a `.py` file in the `cogs/` folder and follow this structure:
 
+#### Example Command
 ```python
 from discord.ext import commands
 
@@ -105,6 +112,29 @@ class Example(commands.Cog):
     @commands.command()
     async def hello(self, ctx):
         await ctx.send("Hello, world!")
+
+async def setup(bot):
+    await bot.add_cog(Example(bot))
+```
+
+#### Example command to ping the Open WebUI Server with a prompt
+```python
+from discord.ext import commands
+from utils.llm_api import query_llm  # Import the query_llm function
+
+class Example(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def hello(self, ctx, *, prompt: str = "Say Hello to the server and introduce yourself"):
+        """Command to ask the LLM with a customizable prompt."""
+        try:
+            # Ask the LLM with the user-defined prompt or default if not provided
+            response = await query_llm(prompt)
+            await ctx.send(response)  # Send the LLM's response to Discord
+        except Exception as e:
+            await ctx.send(f"An error occurred: {e}")
 
 async def setup(bot):
     await bot.add_cog(Example(bot))
