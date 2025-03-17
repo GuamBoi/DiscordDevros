@@ -40,17 +40,16 @@ async def query_llm(ctx, prompt):
 
 async def inject_mentions(ctx, response_text):
     """Check if any server member's name appears in the response and replace it with a mention."""
-
     for member in ctx.guild.members:
-        member_display_lower = member.display_name.lower()
+        # Make display name and username lowercase for case-insensitive matching
+        member_display_name_lower = member.display_name.lower()
         member_name_lower = member.name.lower()
+        response_text_lower = response_text.lower()
 
-        # Use regex to replace with case-insensitivity while preserving original case
-        def mention_replacer(match):
-            return f"<@{member.id}>"
-
-        # Replace both display name and username if found
-        response_text = re.sub(rf'\b{re.escape(member_display_lower)}\b', mention_replacer, response_text, flags=re.IGNORECASE)
-        response_text = re.sub(rf'\b{re.escape(member_name_lower)}\b', mention_replacer, response_text, flags=re.IGNORECASE)
+        # Only proceed if the name exists in the response (case insensitive)
+        if member_display_name_lower in response_text_lower or member_name_lower in response_text_lower:
+            # Create regex patterns to match whole words only (case insensitive)
+            response_text = re.sub(rf'\b{re.escape(member.display_name)}\b', f"<@{member.id}>", response_text, flags=re.IGNORECASE)
+            response_text = re.sub(rf'\b{re.escape(member.name)}\b', f"<@{member.id}>", response_text, flags=re.IGNORECASE)
 
     return response_text
