@@ -25,7 +25,4 @@ def create_embed(title: str, description: str, color: discord.Color = discord.Co
     if image_url:
         embed.set_image(url=image_url)
     
-    # Optionally, you can add a timestamp to the embed
-    embed.timestamp = discord.utils.utcnow()
-
     return embed
