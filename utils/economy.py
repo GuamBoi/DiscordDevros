@@ -1,6 +1,6 @@
 import os
 import json
-from config import ECONOMY_FOLDER, DEFAULT_VALUE_GIVE, DEFAULT_VALUE_TAKE, CURRENCY_NAME
+from config import ECONOMY_FOLDER, DEFAULT_CURRENCY_GIVE, DEFAULT_CURRENCY_TAKE, CURRENCY_NAME
 
 # Ensure the economy folder exists
 if not os.path.exists(ECONOMY_FOLDER):
@@ -17,7 +17,7 @@ def load_economy(user_id):
             return json.load(f)
     else:
         # Create a new economy file with default values
-        data = {"currency": DEFAULT_VALUE_GIVE}
+        data = {"currency": DEFAULT_CURRENCY_GIVE}
         save_economy(user_id, data)
         return data
 
@@ -27,14 +27,14 @@ def save_economy(user_id, data):
     with open(user_file, 'w') as f:
         json.dump(data, f, indent=4)
 
-def add_currency(user_id, amount=DEFAULT_VALUE_GIVE):
+def add_currency(user_id, amount=DEFAULT_CURRENCY_GIVE):
     """Add currency to a user's economy."""
     data = load_economy(user_id)
     data["currency"] += amount
     save_economy(user_id, data)
     return data["currency"]
 
-def remove_currency(user_id, amount=DEFAULT_VALUE_TAKE):
+def remove_currency(user_id, amount=DEFAULT_CURRENCY_TAKE):
     """Remove currency from a user's economy."""
     data = load_economy(user_id)
     data["currency"] = max(0, data["currency"] - amount)  # Prevent negative values
