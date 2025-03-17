@@ -1,32 +1,36 @@
-
 # DiscordDevros
 
-A Discord bot structured with a modular command system that can be easily integrated into an Open WebUI Server for more natural respnces from the bot. 
+DiscordDevros is a Discord bot interconnected with an Open WebUI server to generate unique and more natural language responses. The code is structured in a modular format to allow for easy customization based on the needs of your server. The `cogs` folder contains the code for all commands available on the server. Each script is either an individual command, or a group of commands that function together to create a game or other feature. 
 
 ## Bot File Structure
 ```
-DiscordDevros/
+DiscordDevros/         # Main Directory
 │
-├── cogs/                   # Folder for command files
-│   ├── __init__.py         # Makes cogs a package
-│   ├── ask.py              # Ask your Pi LLM a question (Ai)
-│   └── wordle.py           # Commands for starting / guessing in wordle (Ai)
+├── cogs/                 # Folder for command files
+│   ├── __init__.py          # Makes the cogs folder a package
+│   ├── ask.py               # Ask your Pi LLM a question (Ai)
+│   ├── dice.py              # Allows users to roll diffrent DND dice
+│   ├── invite.py            # Sends a game invite to the game being played
+│   └── wordle.py            # Commands for starting / guessing in wordle (Ai)
 │
-├── utils/
-│   └── llm_api.py          # Handles connection with Open WebUI's API
+├── utils/                # Folder for utility script files
+│   ├── __init__.py          # Makes the utils folder a package
+│   ├── embed.py             # Handles the embed format for bot messages
+│   └── llm_api.py           # Handles connection with Open WebUI's API
 │
-├── .env                    # Stores bot token, prefix, and API info
-├── .gitignore
-├── README.md               # Documentation
-├── bot.py                  # Main bot file (loads commands dynamically)
-├── config.py               # Loads API keys and settings from .env
-└── requirements.txt        # Dependencies
+├── .env                     # Stores bot token, prefix, and API info
+├── .gitignore               # Ignores sensitive files when cloned
+├── README.md                # Code documentation (This File)
+├── bot.py                   # Main bot file (loads commands dynamically)
+├── config.py                # Cofiguration file for bot settings
+└── requirements.txt         # Dependencies that need to be installed
 ```
 
 ## Features
-- Uses cogs for modular command handling
-- Loads bot token and prefix from a `.env` file for security
-- Easy expansion by adding new command files in the `cogs/` folder
+- Uses cogs for modular command handling (add or remove scripts from the `cogs/` folder to customize the bot)
+- Loads bot token and prefix from a `.env` file for security. (Sensitive info in this file is loaded into the `config.py` file)
+- The `utils/` folder contains utility scripts. 
+	- The `llm_api.py` file is used to easily integrate the Open WebUI API into any script with the `(Ai)` tag in the folder structure above.
 
 ## Installation
 
