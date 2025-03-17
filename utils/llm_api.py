@@ -25,9 +25,25 @@ async def query_llm(ctx, prompt):
                 async with session.post(OPENWEBUI_API_URL, json=data, headers=headers) as response:
                     if response.status == 200:
                         json_data = await response.json()
-                        # Assuming OpenWebUI returns "choices" with a "message" object in its response
-                        return json_data.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
+                        response_text = json_data.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
+
+                        # Check for member mentions in the response
+                        response_text = await inject_mentions(ctx, response_text)
+
+                        return response_text
                     else:
                         return f"API Error: {response.status}"
         except Exception as e:
             return f"Request Failed: {e}"
+
+
+async def inject_mentions(ctx, response_text):
+    """Check if any server member's name appears in the response and replace it with a mention."""
+    for member in ctx.guild.members:
+        # Check if the member's display name or username is in the response
+        if member.display_name in response_text or member.name in response_text:
+            # Replace the name with a proper mention
+            response_text = response_text.replace(member.display_name, f"<@{member.id}>")
+            response_text = response_text.replace(member.name, f"<@{member.id}>")
+
+    return response_text
