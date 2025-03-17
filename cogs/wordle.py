@@ -34,7 +34,7 @@ class WordleGame(commands.Cog):
         self.active_games = {}  # Stores game state for each user
 
     @commands.command(name="wordle")
-    async def start_wordle(self, ctx):
+    async def wordle(self, ctx):
         """Starts a new Wordle game using an AI-generated word."""
         user = ctx.author
         if user.id in self.active_games:
@@ -70,7 +70,7 @@ class WordleGame(commands.Cog):
             await ctx.send("Wordle game channel not found. Please check the config file.")
 
     @commands.command(name="guess")
-    async def make_guess(self, ctx, word: str):
+    async def guess(self, ctx, word: str):
         """Allows the user to make a guess in an active Wordle game."""
         user = ctx.author
         if user.id not in self.active_games:
