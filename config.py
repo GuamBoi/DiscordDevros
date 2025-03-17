@@ -14,4 +14,7 @@ COMMAND_PREFIX = "!"                                      # Change this value if
 MODEL_NAME = "YOUR_MODEL_NAME"                            # Set your model name here.
 
 # Channel Specifications
-WORDLE_CHANNEL = YOUR_CHANNEL_ID                          # Change to your Wordle Channels ID
+WORDLE_CHANNEL = YOUR_CHANNEL_ID                          # Change to your Wordle Channel ID
+INVITE_CHANNEL = YOUR_CHANNEL_ID                          # Change to your Game Invite Channel ID
+WELCOME_CHANNEL = YOUR_CHANNEL_ID                         # Change to your Welcome Channel ID
+GOODBYE_CHANNEL = YOUR_CHANNEL_ID                         # Change to your Goodbye Channel ID
