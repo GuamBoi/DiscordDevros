@@ -9,7 +9,7 @@ class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='currency', help='Check your current balance')
+    @commands.command(name='balance', help='Check your current balance')
     async def balance(self, ctx):
         """Display the user's current currency balance."""
         user_id = str(ctx.author.id)
