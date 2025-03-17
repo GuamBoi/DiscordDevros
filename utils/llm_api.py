@@ -4,7 +4,7 @@ from config import OPENWEBUI_API_URL, OPENWEBUI_API_KEY, MODEL_NAME
 async def query_llm(ctx, prompt):
     """Send a request to the LLM API and return the generated response with typing indicator."""
     if not OPENWEBUI_API_URL or not OPENWEBUI_API_KEY:
-        return "Error: OpenWebUI API settings are missing."
+        return "Error: OpenWebUI URL and/or API settings are missing."
 
     # Show typing indicator while waiting for the LLM response
     async with ctx.typing():
