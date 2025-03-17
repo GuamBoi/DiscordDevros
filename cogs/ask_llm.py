@@ -10,9 +10,8 @@ class AskLLMCog(commands.Cog):
     async def ask(self, ctx, *, question: str):
         """Command to ask the LLM a question."""
         try:
-            # Show the bot is typing
-            async with ctx.typing():
-                response = await query_llm(question)
+            # Pass ctx to query_llm to show the typing indicator
+            response = await query_llm(ctx, question)
             await ctx.send(response)
         except Exception as e:
             await ctx.send(f"An error occurred: {e}")
