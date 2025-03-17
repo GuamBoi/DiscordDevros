@@ -1,4 +1,5 @@
 import aiohttp
+import re
 from config import OPENWEBUI_API_URL, OPENWEBUI_API_KEY, MODEL_NAME
 
 async def query_llm(ctx, prompt):
@@ -39,11 +40,17 @@ async def query_llm(ctx, prompt):
 
 async def inject_mentions(ctx, response_text):
     """Check if any server member's name appears in the response and replace it with a mention."""
+
     for member in ctx.guild.members:
-        # Check if the member's display name or username is in the response
-        if member.display_name in response_text or member.name in response_text:
-            # Replace the name with a proper mention
-            response_text = response_text.replace(member.display_name, f"<@{member.id}>")
-            response_text = response_text.replace(member.name, f"<@{member.id}>")
+        member_display_lower = member.display_name.lower()
+        member_name_lower = member.name.lower()
+
+        # Use regex to replace with case-insensitivity while preserving original case
+        def mention_replacer(match):
+            return f"<@{member.id}>"
+
+        # Replace both display name and username if found
+        response_text = re.sub(rf'\b{re.escape(member_display_lower)}\b', mention_replacer, response_text, flags=re.IGNORECASE)
+        response_text = re.sub(rf'\b{re.escape(member_name_lower)}\b', mention_replacer, response_text, flags=re.IGNORECASE)
 
     return response_text
