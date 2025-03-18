@@ -50,27 +50,27 @@ class DiceCog(commands.Cog):
     # Individual dice commands
     @commands.command()
     async def d4(self, ctx):
-        await self.roll_dice(ctx, "D4", 4, discord.Color.blue())
+        await self.roll_dice(ctx, "d4", 4, discord.Color.blue())
 
     @commands.command()
     async def roll(self, ctx):
-        await self.roll_dice(ctx, "D6", 6, discord.Color.blue())
+        await self.roll_dice(ctx, "roll", 6, discord.Color.blue())
 
     @commands.command()
     async def d8(self, ctx):
-        await self.roll_dice(ctx, "D8", 8, discord.Color.blue())
+        await self.roll_dice(ctx, "d8", 8, discord.Color.blue())
 
     @commands.command()
     async def d10(self, ctx):
-        await self.roll_dice(ctx, "D10", 10, discord.Color.blue())
+        await self.roll_dice(ctx, "d10", 10, discord.Color.blue())
 
     @commands.command()
     async def d12(self, ctx):
-        await self.roll_dice(ctx, "D12", 12, discord.Color.blue())
+        await self.roll_dice(ctx, "d12", 12, discord.Color.blue())
 
     @commands.command()
     async def d20(self, ctx):
-        await self.roll_dice(ctx, "D20", 20, discord.Color.blue())
+        await self.roll_dice(ctx, "d20", 20, discord.Color.blue())
 
 async def setup(bot):
     await bot.add_cog(DiceCog(bot))
