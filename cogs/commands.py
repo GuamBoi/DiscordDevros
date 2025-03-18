@@ -4,16 +4,28 @@ import discord
 from discord.ext import commands
 from utils.embed import create_embed
 from utils.llm_api import query_llm
-from config import COMMAND_PREFIX, HELP_COMMAND_CHANNEL_CATEGORY
+from config import COMMAND_PREFIX, HELP_COMMAND_CHANNEL_CATEGORY, BOT_NAME
 
-# Path to the commands JSON file (adjust folder name/path as needed)
+# Path to the commands JSON file
 COMMANDS_JSON_PATH = os.path.join("data", "commands.json")
 
 def load_commands_data():
-    """Load the commands JSON file and return its data."""
+    """Load the commands JSON file and replace any placeholders using config.py values."""
     try:
         with open(COMMANDS_JSON_PATH, "r") as f:
             data = json.load(f)
+        
+        # Convert config variables to a dictionary
+        config_vars = {k: v for k, v in vars(config).items() if not k.startswith("__") and not callable(v)}
+
+        # Perform the placeholder replacement
+        for cmd in data:
+            for key in ["Description", "LLM_Context"]:
+                if key in cmd and isinstance(cmd[key], str):
+                    for var_name, var_value in config_vars.items():
+                        placeholder = f"{{{var_name}}}"
+                        cmd[key] = cmd[key].replace(placeholder, str(var_value))
+
         return data
     except Exception as e:
         print(f"Error loading commands JSON: {e}")
@@ -22,11 +34,10 @@ def load_commands_data():
 class CommandHelpCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Map user_id to private channel object
         self.active_private_channels = {}
 
     @commands.command(name="commands", help="Displays a list of all available commands with descriptions and usage examples.")
-    async def show_commands(self, ctx):
+    async def commands(self, ctx):
         commands_data = load_commands_data()
         if not commands_data:
             await ctx.send("Error: Could not load commands information.")
@@ -55,7 +66,6 @@ class CommandHelpCog(commands.Cog):
             await ctx.send("Error: Could not load commands information.")
             return
 
-        # Find the command info by name (case-insensitive)
         command_info = next(
             (cmd for cmd in commands_data if cmd.get("Command_Name", "").lower() == command_name.lower()),
             None
@@ -69,19 +79,16 @@ class CommandHelpCog(commands.Cog):
             await ctx.send(f"No LLM context available for command '{command_name}'.")
             return
 
-        # Check if the user already has an active private channel
         if ctx.author.id in self.active_private_channels:
             private_channel = self.active_private_channels[ctx.author.id]
             await ctx.send(f"You already have a private channel: {private_channel.mention}")
             return
 
-        # Locate the category for private channels using the new config value.
         category = discord.utils.get(ctx.guild.categories, id=HELP_COMMAND_CHANNEL_CATEGORY)
         if not category:
             await ctx.send("Error: Private channel category not found.")
             return
 
-        # Set permission overwrites so only the user and the bot can see the channel
         overwrites = {
             ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             ctx.author: discord.PermissionOverwrite(read_messages=True, send_messages=True),
@@ -99,14 +106,12 @@ class CommandHelpCog(commands.Cog):
             await ctx.send(f"Failed to create private channel: {e}")
             return
 
-        # Use the LLM context as the initial prompt to your LLM server.
         response = await query_llm(ctx, llm_context)
         await private_channel.send(f"LLM Response for command **{command_name}**:\n{response}")
         await ctx.send(f"Private channel created: {private_channel.mention}")
 
     @commands.command(name="bye", help="Closes your private help channel.")
     async def bye(self, ctx):
-        # Ensure this command is run in a private channel that you created.
         if ctx.author.id not in self.active_private_channels:
             await ctx.send("You don't have an active private channel.")
             return
@@ -121,29 +126,6 @@ class CommandHelpCog(commands.Cog):
             del self.active_private_channels[ctx.author.id]
         except Exception as e:
             await ctx.send(f"Failed to delete channel: {e}")
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        # Ignore messages from bots.
-        if message.author.bot:
-            return
-
-        # Check if this message is in one of our active private channels.
-        if message.channel.id not in [ch.id for ch in self.active_private_channels.values()]:
-            return
-
-        # If the message starts with the command prefix, let the command handler process it.
-        if message.content.startswith(COMMAND_PREFIX):
-            return
-
-        # Forward the user's message to the LLM automatically.
-        try:
-            async with message.channel.typing():
-                # Using the message content as prompt.
-                response = await query_llm(message, message.content)
-            await message.channel.send(response)
-        except Exception as e:
-            await message.channel.send(f"Error processing your message: {e}")
 
 async def setup(bot):
     await bot.add_cog(CommandHelpCog(bot))
