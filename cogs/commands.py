@@ -4,12 +4,10 @@ import discord
 from discord.ext import commands
 from utils.embed import create_embed
 from utils.llm_api import query_llm
-from config import COMMAND_PREFIX  # Make sure COMMAND_PREFIX is defined in your config.py
+from config import COMMAND_PREFIX, HELP_COMMAND_CHANNEL_CATEGORY
 
 # Path to the commands JSON file (adjust folder name/path as needed)
 COMMANDS_JSON_PATH = os.path.join("data", "commands.json")
-# ID of the server category in which to create private channels
-PRIVATE_CATEGORY_ID = 1036929287346999326
 
 def load_commands_data():
     """Load the commands JSON file and return its data."""
@@ -27,7 +25,7 @@ class CommandHelpCog(commands.Cog):
         # Map user_id to private channel object
         self.active_private_channels = {}
 
-    @commands.command(name="commands", help="Displays a list of all available commands with descriptions.")
+    @commands.command(name="commands", help="Displays a list of all available commands with descriptions and usage examples.")
     async def show_commands(self, ctx):
         commands_data = load_commands_data()
         if not commands_data:
@@ -38,17 +36,19 @@ class CommandHelpCog(commands.Cog):
         for cmd in commands_data:
             command_name = cmd.get("Command_Name", "N/A")
             description = cmd.get("Description", "No description provided.")
-            fields.append({"name": f"!{command_name}", "value": description, "inline": False})
+            example = cmd.get("Example", "No example provided.")
+            field_value = f"**Description:** {description}\n**Example:** `{example}`"
+            fields.append({"name": f"!{command_name}", "value": field_value, "inline": False})
 
         embed = create_embed(
             title="Available Commands",
-            description="Here are all the commands available:",
+            description="Below is a list of all commands along with their descriptions and example usage:",
             fields=fields,
             color=0x00FF00
         )
         await ctx.send(embed=embed)
 
-    @commands.command(name="command_help", help="Provides detailed help for a specific command.")
+    @commands.command(name="command_help", help="Provides detailed help for a specific command using LLM context.")
     async def command_help(self, ctx, command_name: str):
         commands_data = load_commands_data()
         if not commands_data:
@@ -75,8 +75,8 @@ class CommandHelpCog(commands.Cog):
             await ctx.send(f"You already have a private channel: {private_channel.mention}")
             return
 
-        # Locate the category for private channels
-        category = discord.utils.get(ctx.guild.categories, id=PRIVATE_CATEGORY_ID)
+        # Locate the category for private channels using the new config value.
+        category = discord.utils.get(ctx.guild.categories, id=HELP_COMMAND_CHANNEL_CATEGORY)
         if not category:
             await ctx.send("Error: Private channel category not found.")
             return
