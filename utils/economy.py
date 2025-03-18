@@ -21,12 +21,18 @@ def load_economy(username):
 
     if os.path.exists(user_file):
         with open(user_file, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+        # Ensure the bet_lock key exists; if not, add it with default value 0
+        if "bet_lock" not in data:
+            data["bet_lock"] = 0
+            save_economy(username, data)
+        return data
     else:
-        # Create a new economy file with default values
+        # Create a new economy file with default values, including bet_lock set to 0
         data = {
             "username": username,
-            "currency": DEFAULT_CURRENCY_GIVE
+            "currency": DEFAULT_CURRENCY_GIVE,
+            "bet_lock": 0
         }
         save_economy(username, data)
         return data
