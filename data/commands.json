@@ -31,32 +31,32 @@
     },  
     {
         "Command_Name": "d4",
-        "Description": "",
+        "Description": "Rolls a 4 sided dice",
         "LLM_Context": ""
     },  
     {
         "Command_Name": "roll",
-        "Description": "",
+        "Description": "Rolls a normal 6 sided dice",
         "LLM_Context": ""
     },  
     {
         "Command_Name": "d12",
-        "Description": "",
+        "Description": "Rolls a 12 sided dice",
         "LLM_Context": ""
     },  
     {
         "Command_Name": "d20",
-        "Description": "",
+        "Description": "Rolls a 20 sided dice",
         "LLM_Context": ""
     },  
     {
         "Command_Name": "balance",
-        "Description": "",
+        "Description": "Checks your avalible server economy balance",
         "LLM_Context": ""
     }, 
     {
         "Command_Name": "leaderboard",
-        "Description": "",
+        "Description": "Displays the top 10",
         "LLM_Context": ""
     },
     {
