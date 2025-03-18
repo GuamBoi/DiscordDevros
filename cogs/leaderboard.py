@@ -15,7 +15,8 @@ class Leaderboard(commands.Cog):
         username = ctx.author.name  # Now using the username instead of user ID
         balance = load_economy(username)["currency"]
         
-        embed = create_embed(
+        # Await the asynchronous create_embed call
+        embed = await create_embed(
             title=f"{ctx.author.name}'s Currency Balance",
             description=f"You currently have {balance} {CURRENCY_NAME}.",
             color=discord.Color.green()
@@ -44,7 +45,8 @@ class Leaderboard(commands.Cog):
         for i, (username, currency) in enumerate(top_10, start=1):
             leaderboard_text += f"{i}. {username} - {currency} {CURRENCY_NAME}\n"
 
-        embed = create_embed(
+        # Await the asynchronous create_embed call
+        embed = await create_embed(
             title="Top 10 Currency Leaderboard",
             description=leaderboard_text,
             color=discord.Color.gold()
