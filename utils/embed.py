@@ -1,9 +1,9 @@
 # utils/embed.py
 
 import discord
-from llm_api import query_llm  # Assuming you have the function to call your LLM API
+from config import BOT_NAME, BOT_VERSION  # Import the bot name and version from config
 
-async def create_embed(title: str, description: str, color: discord.Color = discord.Color.blue(), footer_text: str = "Devros Bot", image_url: str = None) -> discord.Embed:
+async def create_embed(title: str, description: str, color: discord.Color = discord.Color.blue(), footer_text: str = None, image_url: str = None) -> discord.Embed:
     """
     Creates a visually appealing and customizable embed for the bot.
     
@@ -11,7 +11,7 @@ async def create_embed(title: str, description: str, color: discord.Color = disc
         title (str): The title of the embed.
         description (str): The description/content of the embed.
         color (discord.Color, optional): The color of the embed. Defaults to blue.
-        footer_text (str, optional): The footer text. Defaults to "Devros Bot".
+        footer_text (str, optional): The footer text. Defaults to BOT_NAME and BOT_VERSION if not provided.
         image_url (str, optional): A URL to an image to include in the embed. Defaults to None.
     
     Returns:
@@ -19,10 +19,9 @@ async def create_embed(title: str, description: str, color: discord.Color = disc
     """
     embed = discord.Embed(title=title, description=description, color=color)
     
-    # If no footer text is provided, request a random emoji from the LLM
+    # If no footer text is provided, use the bot name and version from config
     if not footer_text:
-        prompt = "Say `Hello!` in a random language."
-        footer_text = await query_llm(None, prompt)  # Pass `None` for `ctx` if not required in this case
+        footer_text = f"{BOT_NAME} v{BOT_VERSION}"
     
     # Set the footer with the option to include custom text
     embed.set_footer(text=footer_text)
