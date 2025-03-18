@@ -44,7 +44,8 @@ class GameInviteCog(commands.Cog):
                         f"📢 {ai_invite_message}"
                     )
 
-                    embed = create_embed(
+                    # Await the create_embed function
+                    embed = await create_embed(
                         title="🎮 Game Invitation",
                         description=invite_message,
                         color=discord.Color.green()
