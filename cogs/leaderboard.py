@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands
 from config import ECONOMY_FOLDER, CURRENCY_NAME
-from utils.economy import get_balance, load_economy
+from utils.economy import load_economy
 from utils.embed import create_embed
 
 class Leaderboard(commands.Cog):
@@ -12,8 +12,8 @@ class Leaderboard(commands.Cog):
     @commands.command(name='balance', help='Check your current balance')
     async def balance(self, ctx):
         """Display the user's current currency balance."""
-        user_id = str(ctx.author.id)
-        balance = get_balance(user_id)
+        username = ctx.author.name  # Now using the username instead of user ID
+        balance = load_economy(username)["currency"]
         
         embed = create_embed(
             title=f"{ctx.author.name}'s Currency Balance",
@@ -31,9 +31,9 @@ class Leaderboard(commands.Cog):
         # Iterate through all JSON files in the economy folder
         for file in os.listdir(ECONOMY_FOLDER):
             if file.endswith(".json"):
-                user_id = file.replace(".json", "")
-                data = load_economy(user_id)
-                economy_data.append((user_id, data['currency']))
+                username = file.replace(".json", "")
+                data = load_economy(username)
+                economy_data.append((username, data['currency']))
         
         # Sort the data by currency in descending order and take the top 10
         economy_data.sort(key=lambda x: x[1], reverse=True)
@@ -41,9 +41,8 @@ class Leaderboard(commands.Cog):
 
         # Create the leaderboard text
         leaderboard_text = ""
-        for i, (user_id, currency) in enumerate(top_10, start=1):
-            user = self.bot.get_user(int(user_id))
-            leaderboard_text += f"{i}. {user.name if user else 'Unknown User'} - {currency} {CURRENCY_NAME}\n"
+        for i, (username, currency) in enumerate(top_10, start=1):
+            leaderboard_text += f"{i}. {username} - {currency} {CURRENCY_NAME}\n"
 
         embed = create_embed(
             title="Top 10 Currency Leaderboard",
