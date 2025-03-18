@@ -37,7 +37,7 @@ class CommandHelpCog(commands.Cog):
         self.active_private_channels = {}
 
     @commands.command(name="commands", help="Displays a list of all available commands with descriptions and usage examples.")
-    async def commands(self, ctx):
+    async def show_commands(self, ctx):
         commands_data = load_commands_data()
         if not commands_data:
             await ctx.send("Error: Could not load commands information.")
