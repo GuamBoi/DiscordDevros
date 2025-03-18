@@ -46,7 +46,7 @@ class BetCog(commands.Cog):
         bet_message = f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {amount} currency!\n" \
                       f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
 
-        bet_embed = create_embed(
+        bet_embed = await create_embed(
             title="Bet Challenge",
             description=bet_message,
             color=discord.Color.green()
@@ -65,7 +65,6 @@ class BetCog(commands.Cog):
             reaction, _ = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_reaction)
             if str(reaction.emoji) == "✅":
                 await ctx.send(f"{user_bet_against.mention} has accepted the bet! The challenge is on!")
-                # You can handle the result later once both agree on the winner.
             else:
                 await ctx.send(f"{user_bet_against.mention} has declined the bet.")
                 # Unlock both users as the bet was declined
@@ -78,20 +77,6 @@ class BetCog(commands.Cog):
             await self.manage_bet_lock(ctx.author.name, 0)
             await self.manage_bet_lock(user_bet_against.name, 0)
 
-    async def resolve_bet(self, ctx, winner, loser, amount):
-        """Resolve the bet and transfer the currency to the winner."""
-        # Add currency to the winner and remove it from the loser
-        add_currency(winner, amount)
-        remove_currency(loser, amount)
-
-        # Unlock both users after the bet is resolved
-        await self.manage_bet_lock(winner, 0)
-        await self.manage_bet_lock(loser, 0)
-
-        # Notify both users of the outcome
-        await ctx.send(f"{winner.mention} wins the bet! {amount} currency has been transferred to them!")
-        await ctx.send(f"{loser.mention}, better luck next time!")
-
     @commands.command()
     async def bet(self, ctx, amount: int, user_bet_against: discord.User):
         """Place a bet against another user."""
@@ -100,19 +85,6 @@ class BetCog(commands.Cog):
             return
         
         await self.initiate_bet(ctx, amount, user_bet_against)
-
-    @commands.command()
-    async def choose_winner(self, ctx, winner: discord.User, loser: discord.User, amount: int):
-        """Choose the winner of the bet. Only both users can choose."""
-        # Ensure the bet is resolved by both participants
-        if ctx.author != winner and ctx.author != loser:
-            await ctx.send("Only the participants of the bet can resolve it.")
-            return
-        
-        if winner != loser:
-            await self.resolve_bet(ctx, winner, loser, amount)
-        else:
-            await ctx.send("Both users must select a different winner!")
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
