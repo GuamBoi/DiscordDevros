@@ -37,7 +37,8 @@ class DiceCog(commands.Cog):
         # Static message + AI-generated reaction
         roll_message = f"{ctx.author.mention} rolled a **{dice_type}** and got **{roll_result}**!\n🎲 {reaction}"
 
-        embed = create_embed(
+        # Await the create_embed function
+        embed = await create_embed(
             title=f"{dice_type} Roll",
             description=roll_message,
             color=color,
