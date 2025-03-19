@@ -30,9 +30,20 @@ class CommandHelp(commands.Cog):
         llm_context = command_info.get("LLM_Context", "No specific context available.")
         example = command_info.get("Example", "No example available.")
 
-        # Ask the user how we can help them with the command
-        await private_channel.send(f"Hey {user.mention}, how can I help you with the `{command_name}` command?")
-        await private_channel.send("Please use `!bye` at the end of our conversation to delete this channel.")
+        # Perform placeholder replacement in the LLM context and example
+        llm_context = llm_context.replace("{BOT_NAME}", BOT_NAME)
+        example = example.replace("{BOT_NAME}", BOT_NAME)
+
+        # Prepare the embed with the command help message
+        embed = discord.Embed(
+            title="Command Help",
+            description=f"Hey {user.mention}, how can I help you with the `{command_name}` command?\n\n{llm_context}",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Please use `!bye` at the end of our conversation to delete this channel.")
+        
+        # Send the embed in the private channel
+        await private_channel.send(embed=embed)
 
         # Wait for the user's response
         def check(m):
@@ -61,6 +72,35 @@ class CommandHelp(commands.Cog):
         except asyncio.TimeoutError:
             await private_channel.send("No response received. Closing this help session.")
             await private_channel.delete()
+
+    @commands.command()
+    async def explain(self, ctx, command_name: str = None):
+        """Explain a command with its description and example."""
+        if command_name is None:
+            await ctx.send("Please specify the command you need help with. Usage: `!explain <command>`")
+            return
+
+        # Retrieve command information
+        command_info = get_command_info(command_name)
+        if not command_info:
+            await ctx.send("Sorry, I couldn't find information on that command.")
+            return
+
+        # Get the description and example from the command information
+        description = command_info.get("Description", "No description available.")
+        example = command_info.get("Example", "No example available.")
+
+        # Perform placeholder replacement in the description and example
+        description = description.replace("{BOT_NAME}", BOT_NAME)
+        example = example.replace("{BOT_NAME}", BOT_NAME)
+
+        # Create and send the embed in the current channel
+        embed = await create_embed(
+            title=f"Command: {command_name}",
+            description=f"**Description:**\n{description}\n\n**Example:**\n{example}",
+            footer_text=f"{BOT_NAME} v{BOT_VERSION}"
+        )
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(CommandHelp(bot))
