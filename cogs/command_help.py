@@ -11,27 +11,12 @@ class CommandHelp(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def explain(self, ctx, command_name: str):
-        """Provides help information about a specific command."""
-        # Get the command information from the dictionary
-        command_info = get_command_info(command_name)
-        if not command_info:
-            await ctx.send("Sorry, I couldn't find information on that command.")
+    async def command_help(self, ctx, command_name: str = None):
+        """Provide help in a private channel and wait for user responses."""
+        if command_name is None:
+            await ctx.send("Please specify the command you need help with. Usage: `!command_help <command>`")
             return
 
-        description = command_info.get("Description", "No description available.")
-        example = command_info.get("Example", "No example available.")  # Get the example (if available)
-        
-        embed = await create_embed(
-            title=f"{command_name} Explained",
-            description=f"{description}\n\nExample: {example}",
-            footer_text=f"{BOT_NAME} v{BOT_VERSION}"
-        )
-        await ctx.send(embed=embed)
-
-    @commands.command()
-    async def command_help_private(self, ctx, command_name: str):
-        """Provide help in a private channel and wait for user responses."""
         user = ctx.author
         # Create a private channel for the user
         private_channel = await ctx.guild.create_text_channel(f"{user.name}-help")
@@ -43,11 +28,11 @@ class CommandHelp(commands.Cog):
             return
 
         llm_context = command_info.get("LLM_Context", "No specific context available.")
-        example = command_info.get("Example", "No example available.")  # Get the example (if available)
+        example = command_info.get("Example", "No example available.")
 
-        # Ask the user how you can help them with the command
+        # Ask the user how we can help them with the command
         await private_channel.send(f"Hey {user.mention}, how can I help you with the `{command_name}` command?")
-        await private_channel.send(f"Please use `!bye` at the end of our conversation to delete this channel.")
+        await private_channel.send("Please use `!bye` at the end of our conversation to delete this channel.")
 
         # Wait for the user's response
         def check(m):
@@ -55,7 +40,6 @@ class CommandHelp(commands.Cog):
 
         try:
             user_response = await self.bot.wait_for("message", check=check, timeout=3600)
-            
             # Combine LLM context, example, and the user's question to form the prompt
             prompt = f"{llm_context}\nExample: {example}\nUser's question: {user_response.content}"
             
