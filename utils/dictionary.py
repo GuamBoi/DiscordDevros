@@ -1,9 +1,17 @@
 import os
 import json
-from config import BOT_NAME
+from config import BOT_NAME, COMMAND_PREFIX, HELP_COMMAND_CHANNEL_CATEGORY
 
 # Path to the commands JSON file
 COMMANDS_JSON_PATH = os.path.join("data", "commands.json")
+
+def replace_placeholders(text, config_vars):
+    """Helper function to replace placeholders in text using provided config variables."""
+    if isinstance(text, str):
+        for var_name, var_value in config_vars.items():
+            placeholder = f"{{{var_name}}}"
+            text = text.replace(placeholder, str(var_value))
+    return text
 
 def load_commands_data():
     """Load the commands JSON file and replace any placeholders using config.py values."""
@@ -11,17 +19,18 @@ def load_commands_data():
         with open(COMMANDS_JSON_PATH, "r") as f:
             data = json.load(f)
         
-        # Convert config variables to a dictionary
-        from config import COMMAND_PREFIX, HELP_COMMAND_CHANNEL_CATEGORY
-        config_vars = {k: v for k, v in vars().items() if not k.startswith("__") and not callable(v)}
+        # Prepare the config variables for replacement
+        config_vars = {
+            "BOT_NAME": BOT_NAME,
+            "COMMAND_PREFIX": COMMAND_PREFIX,
+            "HELP_COMMAND_CHANNEL_CATEGORY": HELP_COMMAND_CHANNEL_CATEGORY
+        }
 
         # Perform the placeholder replacement
         for cmd in data:
             for key in ["Description", "LLM_Context"]:
                 if key in cmd and isinstance(cmd[key], str):
-                    for var_name, var_value in config_vars.items():
-                        placeholder = f"{{{var_name}}}"
-                        cmd[key] = cmd[key].replace(placeholder, str(var_value))
+                    cmd[key] = replace_placeholders(cmd[key], config_vars)
 
         return data
     except Exception as e:
@@ -39,21 +48,5 @@ def get_command_info(command_name):
         (cmd for cmd in commands_data if cmd.get("Command_Name", "").lower() == command_name.lower()), 
         None
     )
-
-    if command:
-        # Replace placeholders in Description and LLM_Context before returning command info
-        description = command.get("Description", "")
-        llm_context = command.get("LLM_Context", "")
-
-        # Perform replacement for placeholders
-        from config import BOT_NAME  # Ensure BOT_NAME is correctly imported
-        config_vars = {"BOT_NAME": BOT_NAME}  # Add any other config variables here if needed
-        for var_name, var_value in config_vars.items():
-            placeholder = f"{{{var_name}}}"
-            description = description.replace(placeholder, str(var_value))
-            llm_context = llm_context.replace(placeholder, str(var_value))
-
-        command["Description"] = description
-        command["LLM_Context"] = llm_context
 
     return command
