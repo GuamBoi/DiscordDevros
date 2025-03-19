@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from llm_api import query_llm, query_llm_with_command_info
+from utils.llm_api import query_llm, query_llm_with_command_info
 from config import COMMAND_PREFIX
 import json
 import os
