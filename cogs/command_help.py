@@ -30,10 +30,6 @@ class CommandHelp(commands.Cog):
         llm_context = command_info.get("LLM_Context", "No specific context available.")
         example = command_info.get("Example", "No example available.")
 
-        # Perform placeholder replacement in the LLM context and example
-        llm_context = llm_context.replace("{BOT_NAME}", BOT_NAME)
-        example = example.replace("{BOT_NAME}", BOT_NAME)
-
         # Prepare the embed with the command help message
         embed = discord.Embed(
             title="Command Help",
@@ -89,10 +85,6 @@ class CommandHelp(commands.Cog):
         # Get the description and example from the command information
         description = command_info.get("Description", "No description available.")
         example = command_info.get("Example", "No example available.")
-
-        # Perform placeholder replacement in the description and example
-        description = description.replace("{BOT_NAME}", BOT_NAME)
-        example = example.replace("{BOT_NAME}", BOT_NAME)
 
         # Create and send the embed in the current channel
         embed = await create_embed(
