@@ -44,6 +44,6 @@ class CommandHelp(commands.Cog):
             help_message += f"Use `{COMMAND_PREFIX}help <command_name>` for more information on a specific command."
             await ctx.send(help_message)
 
-# Add the CommandHelp cog to the bot
-def setup(bot):
-    bot.add_cog(CommandHelp(bot))
+# The setup function must be asynchronous!
+async def setup(bot):
+    await bot.add_cog(CommandHelp(bot))
