@@ -1,13 +1,32 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from utils.llm_api import query_llm
-from utils.dictionary import get_command_info
+from utils.dictionary import get_command_info  # Import the function to load command data
 from config import HELP_COMMAND_CHANNEL_CATEGORY
+import asyncio
 
 class CommandHelpCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.active_private_channels = {}
+        self.inactivity_timeout_task.start()  # Start the inactivity timeout check task
+
+    @tasks.loop(minutes=1)
+    async def inactivity_timeout_task(self):
+        """Check for inactivity in private channels and delete if inactive for 1 hour."""
+        current_time = discord.utils.utcnow()
+        for user_id, private_channel in list(self.active_private_channels.items()):
+            # Get the last message timestamp for the channel
+            last_message_time = private_channel.last_message.created_at if private_channel.last_message else current_time
+            time_difference = (current_time - last_message_time).total_seconds()
+
+            # If no message for 1 hour, delete the channel
+            if time_difference > 3600:
+                try:
+                    await private_channel.delete(reason="No activity for 1 hour.")
+                    del self.active_private_channels[user_id]
+                except discord.NotFound:
+                    pass  # Channel might have already been deleted manually
 
     @commands.command(name="command_help", help="Provides detailed help for a specific command using LLM context.")
     async def command_help(self, ctx, command_name: str):
@@ -56,17 +75,12 @@ class CommandHelpCog(commands.Cog):
         # Send message asking user for help context
         await private_channel.send(f"Hey {ctx.author.mention}, how can I help you with the **{command_name}** command?")
 
-        # Wait for the user's response
+        # Wait for the user's response and send to the LLM for a response
         def check(m):
             return m.author == ctx.author and m.channel == private_channel
 
-        try:
-            user_message = await self.bot.wait_for("message", check=check, timeout=60)  # 60-second timeout
-        except asyncio.TimeoutError:
-            await private_channel.send("Sorry, you took too long to respond. The help session has ended.")
-            await private_channel.delete()
-            del self.active_private_channels[ctx.author.id]
-            return
+        # Send the response to the LLM once user message is received
+        user_message = await self.bot.wait_for("message", check=check)
 
         # Get the user's message and combine it with LLM_Context for the query
         user_query = user_message.content
@@ -77,6 +91,22 @@ class CommandHelpCog(commands.Cog):
 
         # Send the response from the LLM in the private channel
         await private_channel.send(f"LLM Response for **{command_name}**:\n{response}")
+
+        # Add a listener for future messages in the private channel
+        async def on_message_in_private_channel(message):
+            if message.author == ctx.author and message.channel == private_channel:
+                # Process the new message and send it to the LLM
+                new_user_query = message.content
+                full_llm_input = f"{llm_context}\nUser's question: {new_user_query}"
+
+                # Query the LLM with the updated context
+                response = await query_llm(ctx, full_llm_input)
+
+                # Send the new response from the LLM in the private channel
+                await private_channel.send(f"LLM Response for **{command_name}**:\n{response}")
+
+        # Register the message listener
+        self.bot.add_listener(on_message_in_private_channel)
 
     @commands.command(name="bye", help="Closes your private help channel.")
     async def bye(self, ctx):
