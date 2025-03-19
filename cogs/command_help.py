@@ -78,5 +78,5 @@ class CommandHelp(commands.Cog):
             await private_channel.send("No response received. Closing this help session.")
             await private_channel.delete()
 
-def setup(bot):
-    bot.add_cog(CommandHelp(bot))
+async def setup(bot):
+    await bot.add_cog(CommandHelp(bot))
