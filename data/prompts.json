@@ -1,0 +1,8 @@
+{
+    "help_default": {
+        "LLM_Message": "Context: {LLM_Context}\nExample: {Example}\nUser Question: {USER_QUESTION}"
+    },
+    "help_detailed": {
+        "LLM_Message": "Below is the context of the command:\n{LLM_Context}\n\nHere is an example:\n{Example}\n\nUser's Inquiry:\n{USER_QUESTION}\n\nPlease provide a detailed response."
+    }
+}
