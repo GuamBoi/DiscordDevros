@@ -6,7 +6,6 @@ async def query_llm(ctx, prompt, private_channel=None):
     if not OPENWEBUI_API_URL or not OPENWEBUI_API_KEY:
         return "Error: OpenWebUI URL and/or API settings are missing."
 
-    # Show typing indicator while waiting for the LLM response
     async with private_channel.typing() if private_channel else ctx.typing():
         headers = {
             'Authorization': f'Bearer {OPENWEBUI_API_KEY}',
@@ -32,8 +31,18 @@ async def query_llm(ctx, prompt, private_channel=None):
         except Exception as e:
             return f"Request Failed: {e}"
 
-async def query_llm_with_command_info(ctx, prompt_name, llm_context, example, user_question, private_channel=None):
-    """Send a request to the LLM API using command information from prompts.json."""
+async def query_llm_with_command_info(ctx, prompt_name, llm_context, example, user_question, command_name, private_channel=None):
+    """
+    Load the prompt template from prompts.json, replace the placeholders with the provided values,
+    and send the formatted prompt to the LLM server.
+    
+    The available placeholders in the template are:
+    - {LLM_Context}: Detailed context for the command.
+    - {Example}: An example usage of the command.
+    - {USER_QUESTION}: The user's question.
+    - {COMMAND_PREFIX}: The server's command prefix.
+    - {Command_Name}: The name of the command.
+    """
     from utils.prompts import load_prompts
 
     prompts = load_prompts()
@@ -47,12 +56,12 @@ async def query_llm_with_command_info(ctx, prompt_name, llm_context, example, us
 
     llm_message_template = prompt_data.get("LLM_Message")
 
-    # Format the prompt using available variables
     final_prompt = llm_message_template.format(
         LLM_Context=llm_context,
         Example=example,
         USER_QUESTION=user_question,
-        COMMAND_PREFIX=COMMAND_PREFIX
+        COMMAND_PREFIX=COMMAND_PREFIX,
+        Command_Name=command_name
     )
 
     return await query_llm(ctx, final_prompt, private_channel=private_channel)
