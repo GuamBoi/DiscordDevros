@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from utils.llm_api import query_llm
+from utils.dictionary import get_command_info
 from config import HELP_COMMAND_CHANNEL_CATEGORY
 
 class CommandHelpCog(commands.Cog):
@@ -10,17 +11,9 @@ class CommandHelpCog(commands.Cog):
 
     @commands.command(name="command_help", help="Provides detailed help for a specific command using LLM context.")
     async def command_help(self, ctx, command_name: str):
-        # Load commands data (Assuming this method loads data from the JSON file)
-        commands_data = load_commands_data()
-        if not commands_data:
-            await ctx.send("Error: Could not load commands information.")
-            return
-
-        # Find the command information from commands.json
-        command_info = next(
-            (cmd for cmd in commands_data if cmd.get("Command_Name", "").lower() == command_name.lower()),
-            None
-        )
+        # Get command information using dictionary.py's get_command_info method
+        command_info = get_command_info(command_name)
+        
         if not command_info:
             await ctx.send(f"Command '{command_name}' not found.")
             return
