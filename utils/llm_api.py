@@ -22,8 +22,10 @@ async def query_llm(ctx, prompt):
         }
 
         try:
+            # Open session for making the request
             async with aiohttp.ClientSession() as session:
                 async with session.post(OPENWEBUI_API_URL, json=data, headers=headers) as response:
+                    # Check response status
                     if response.status == 200:
                         json_data = await response.json()
                         response_text = json_data.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
@@ -36,7 +38,6 @@ async def query_llm(ctx, prompt):
                         return f"API Error: {response.status}"
         except Exception as e:
             return f"Request Failed: {e}"
-
 
 async def inject_mentions(ctx, response_text):
     """Check if any server member's name appears in the response and replace it with a mention."""
