@@ -34,7 +34,26 @@ def get_command_info(command_name):
     if not commands_data:
         return None
 
-    return next(
-        (cmd for cmd in commands_data if cmd.get("Command_Name", "").lower() == command_name.lower()),
+    # Find the command with the given name (case-insensitive)
+    command = next(
+        (cmd for cmd in commands_data if cmd.get("Command_Name", "").lower() == command_name.lower()), 
         None
     )
+
+    if command:
+        # Replace placeholders in Description and LLM_Context before returning command info
+        description = command.get("Description", "")
+        llm_context = command.get("LLM_Context", "")
+
+        # Perform replacement for placeholders
+        from config import BOT_NAME  # Ensure BOT_NAME is correctly imported
+        config_vars = {"BOT_NAME": BOT_NAME}  # Add any other config variables here if needed
+        for var_name, var_value in config_vars.items():
+            placeholder = f"{{{var_name}}}"
+            description = description.replace(placeholder, str(var_value))
+            llm_context = llm_context.replace(placeholder, str(var_value))
+
+        command["Description"] = description
+        command["LLM_Context"] = llm_context
+
+    return command
