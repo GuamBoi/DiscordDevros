@@ -46,7 +46,8 @@ class CommandHelp(commands.Cog):
             return m.author == user and m.channel == private_channel
 
         try:
-            user_response = await self.bot.wait_for("message", check=check, timeout=3600)
+            user_response = await self.bot.wait_for("message", check=check)
+
             # Combine LLM context, example, and the user's question to form the prompt
             prompt = f"{llm_context}\nExample: {example}\nUser's question: {user_response.content}"
             
