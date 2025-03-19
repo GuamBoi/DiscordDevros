@@ -9,12 +9,22 @@ DiscordDevros/         # Main Directory
 ├── cogs/                 # Folder for command files
 │   ├── __init__.py          # Makes the cogs folder a package
 │   ├── ask.py               # Ask your Pi LLM a question (Ai)
+│   ├── bet.py               # Handles bets between 2 server members
+│   ├── command_help.py      # Starts a chat to help users with commands (Ai)
 │   ├── dice.py              # Allows users to roll diffrent DND dice
 │   ├── invite.py            # Sends a game invite to the game being played
+│   ├── leaderboard.py       # Allows Users to check the economy leaderboard
 │   └── wordle.py            # Commands for starting / guessing in wordle (Ai)
+│
+├── data/                 # Folder for storing 
+│   └── commands.json        # File for storing command descriptions
+│
+│
 │
 ├── utils/                # Folder for utility script files
 │   ├── __init__.py          # Makes the utils folder a package
+│   ├── dictionary.py        # Loads and formats command information
+│   ├── economy.py           # Handls the economy logic
 │   ├── embed.py             # Handles the embed format for bot messages
 │   └── llm_api.py           # Handles connection with Open WebUI's API
 │
