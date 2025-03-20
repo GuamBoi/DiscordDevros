@@ -19,8 +19,6 @@ DiscordDevros/         # Main Directory
 ├── data/                 # Folder for storing 
 │   └── commands.json        # File for storing command descriptions
 │
-│
-│
 ├── utils/                # Folder for utility script files
 │   ├── __init__.py          # Makes the utils folder a package
 │   ├── dictionary.py        # Loads and formats command information
