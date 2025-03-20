@@ -10,7 +10,7 @@ def load_commands():
     with open('data/commands.json', 'r') as f:
         return json.load(f)
 
-commands = load_commands()
+commands_list = load_commands()  # Changed variable name to avoid conflict
 
 class CommandHelp(commands.Cog):
     def __init__(self, bot):
@@ -24,7 +24,7 @@ class CommandHelp(commands.Cog):
         """
         if command_name:
             # If a command name is provided, give detailed help for that command
-            command_info = commands.get(command_name.lower())
+            command_info = commands_list.get(command_name.lower())  # Updated to use commands_list
 
             if command_info:
                 # Prepare command info and send it to LLM for further processing
@@ -39,7 +39,7 @@ class CommandHelp(commands.Cog):
         else:
             # If no command name is provided, list all available commands
             help_message = "Here are the available commands:\n"
-            for command_name in commands:
+            for command_name in commands_list:  # Updated to use commands_list
                 help_message += f" - `{COMMAND_PREFIX}{command_name}`\n"
             help_message += f"Use `{COMMAND_PREFIX}help <command_name>` for more information on a specific command."
             await ctx.send(help_message)
