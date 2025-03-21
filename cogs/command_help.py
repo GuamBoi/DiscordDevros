@@ -35,7 +35,7 @@ class CommandHelp(commands.Cog):
                 # Send the response to the private channel or current channel
                 await ctx.author.send(response)
             else:
-                await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}command_help` for a list of commands.")
+                await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}commands` for a list of commands.")
         else:
             # If no command name is provided, list all available commands
             help_message = "Here are the available commands:\n"
