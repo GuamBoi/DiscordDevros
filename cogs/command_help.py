@@ -8,9 +8,9 @@ import os
 # Load the commands from the commands.json file
 def load_commands():
     with open('data/commands.json', 'r') as f:
-        return json.load(f)
+        return {cmd['Command_Name'].lower(): cmd for cmd in json.load(f)}
 
-commands_list = load_commands()  # Changed variable name to avoid conflict
+commands_list = load_commands()  # Changed to dictionary
 
 class CommandHelp(commands.Cog):
     def __init__(self, bot):
@@ -24,22 +24,22 @@ class CommandHelp(commands.Cog):
         """
         if command_name:
             # If a command name is provided, give detailed help for that command
-            command_info = commands_list.get(command_name.lower())  # Updated to use commands_list
+            command_info = commands_list.get(command_name.lower())
 
             if command_info:
                 # Prepare command info and send it to LLM for further processing
                 description = command_info.get("Description", "No description available.")
                 user_question = f"How can I use the command '{command_name}'?"
                 # Call the function that queries the LLM with command info and user question
-                response = await query_llm_with_command_info(command_name, user_question, ctx)
+                response = await query_llm_with_command_info(command_info, user_question, ctx)
                 # Send the response to the private channel or current channel
                 await ctx.author.send(response)
             else:
-                await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}commands` for a list of commands.")
+                await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}command_help` for a list of commands.")
         else:
             # If no command name is provided, list all available commands
             help_message = "Here are the available commands:\n"
-            for command_name in commands_list:  # Updated to use commands_list
+            for command_name in commands_list:
                 help_message += f" - `{COMMAND_PREFIX}{command_name}`\n"
             help_message += f"Use `{COMMAND_PREFIX}command_help <command_name>` for more information on a specific command."
             await ctx.send(help_message)
