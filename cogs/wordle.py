@@ -5,7 +5,7 @@ import json
 from config import GAME_WIN, ECONOMY_FOLDER
 from utils import economy
 from utils.embed import create_embed
-from llm_api import query_llm_with_prompt  # New helper function
+from utils.llm_api import query_llm_with_prompt
 
 MAX_ATTEMPTS = 6
 
