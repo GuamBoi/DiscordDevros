@@ -46,8 +46,21 @@ async def query_llm_with_command_info(command_info, user_question, ctx, private_
     example = command_info.get("Example", "No example available.")
     description = command_info.get("Description", "No description available.")
 
-    # Format the prompt for the LLM
-    prompt = f"Command: {command_info['Command_Name']}\nContext: {llm_context}\nExample: {example}\nDescription: {description}\nUser Question: {user_question}"
+    # Load prompt templates from prompts.json
+    with open('data/prompts.json', 'r') as file:
+        prompts_data = json.load(file)
+
+    # Choose appropriate prompt template
+    prompt_template = prompts_data.get("help_detailed", {}).get("LLM_Message", "No prompt available.")
+
+    # Replace placeholders with actual values
+    prompt = prompt_template.format(
+        Command_Name=command_info['Command_Name'],
+        LLM_Context=llm_context,
+        Example=example,
+        USER_QUESTION=user_question,
+        COMMAND_PREFIX='!'  # Assuming the prefix is set to '!'
+    )
 
     # Pass the formatted prompt to the query_llm function and get the response
     return await query_llm(ctx, prompt, private_channel)
