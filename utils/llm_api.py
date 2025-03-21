@@ -1,5 +1,5 @@
 import aiohttp
-from config import OPENWEBUI_API_KEY, OPENWEBUI_API_URL, MODEL_NAME
+from config import OPENWEBUI_API_KEY, OPENWEBUI_API_URL, MODEL_NAME, BOT_NAME, COMMAND_PREFIX
 import json
 
 async def query_llm(ctx, prompt, private_channel=None):
@@ -55,7 +55,8 @@ async def query_llm_with_command_info(command_info, user_question, ctx, private_
         LLM_Context=llm_context,
         Example=example,
         USER_QUESTION=user_question,
-        COMMAND_PREFIX='!'  # Assuming the prefix is set to '!'
+        COMMAND_PREFIX=COMMAND_PREFIX,
+        BOT_NAME=BOT_NAME
     )
 
     # Pass the formatted prompt to the query_llm function and get the response
