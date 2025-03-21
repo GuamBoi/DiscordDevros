@@ -39,22 +39,15 @@ async def query_llm(ctx, prompt, private_channel=None):
         except Exception as e:
             return f"Request Failed: {e}"
 
-async def query_llm_with_command_info(command_name, user_question, ctx, private_channel=None):
+async def query_llm_with_command_info(command_info, user_question, ctx, private_channel=None):
     """Process command-specific context and user question, then send to LLM."""
-    # Load command data from the commands.json file
-    commands = load_commands()  # Assuming you have a function to load the commands data.
-    command_data = commands.get(command_name)
-
-    if not command_data:
-        return "Command not found."
-
     # Extract relevant data (LLM context, example, description) for the command
-    llm_context = command_data.get("LLM_Context", "No additional context available.")
-    example = command_data.get("Example", "No example available.")
-    description = command_data.get("Description", "No description available.")
+    llm_context = command_info.get("LLM_Context", "No additional context available.")
+    example = command_info.get("Example", "No example available.")
+    description = command_info.get("Description", "No description available.")
 
     # Format the prompt for the LLM
-    prompt = f"Command: {command_name}\nContext: {llm_context}\nExample: {example}\nDescription: {description}\nUser Question: {user_question}"
+    prompt = f"Command: {command_info['Command_Name']}\nContext: {llm_context}\nExample: {example}\nDescription: {description}\nUser Question: {user_question}"
 
     # Pass the formatted prompt to the query_llm function and get the response
     return await query_llm(ctx, prompt, private_channel)
@@ -62,4 +55,4 @@ async def query_llm_with_command_info(command_name, user_question, ctx, private_
 def load_commands():
     """Function to load command data from the commands.json file."""
     with open('data/commands.json', 'r') as file:
-        return json.load(file)
+        return {cmd['Command_Name'].lower(): cmd for cmd in json.load(file)}
