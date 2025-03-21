@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from utils.llm_api import query_llm, query_llm_with_command_info
+from utils.embed import create_embed  # Import the embed function
 from config import COMMAND_PREFIX
 import json
 import os
@@ -43,6 +44,30 @@ class CommandHelp(commands.Cog):
                 help_message += f" - `{COMMAND_PREFIX}{command_name}`\n"
             help_message += f"Use `{COMMAND_PREFIX}command_help <command_name>` for more information on a specific command."
             await ctx.send(help_message)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        # Check if the message is sent via DM (Direct Message)
+        if isinstance(message.channel, discord.DMChannel):
+            # Skip the bot's own messages to avoid loops
+            if message.author == self.bot.user:
+                return
+
+            # Get the message the user sent
+            user_message = message.content
+
+            # Query the LLM for a response using the user's message
+            response = await query_llm(user_message)  # Using the generic query_llm for a more general response
+            
+            # Use the embed utility to format the response
+            embed = await create_embed(
+                title="Response from the Bot",
+                description=response,
+                color=discord.Color.blue(),  # You can change the color if you prefer
+            )
+
+            # Send the embed back to the user via DM
+            await message.channel.send(embed=embed)
 
 # The setup function must be asynchronous!
 async def setup(bot):
