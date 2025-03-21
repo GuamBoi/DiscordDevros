@@ -2,7 +2,7 @@ import os
 import json
 from config import ECONOMY_FOLDER, DEFAULT_CURRENCY_GIVE, DEFAULT_CURRENCY_TAKE, CURRENCY_NAME
 
-# Ensure the economy folder exists
+# Ensure the economy folder exists inside the 'data' folder
 if not os.path.exists(ECONOMY_FOLDER):
     os.makedirs(ECONOMY_FOLDER)
 
