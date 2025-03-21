@@ -88,11 +88,5 @@
         "Description": "Displays the top 10 economy members",
         "Example": "!leaderboard",
         "LLM_Context": "The `leaderboard` command sends a detailed embed to the channel it was used in displaying the top 10 members with the highest balance in the servers economy, in decending order."
-    },
-    {
-        "Command_Name": "",
-        "Description": "",
-        "Example": "",
-        "LLM_Context": ""
     }
 ]
