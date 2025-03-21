@@ -29,10 +29,6 @@ async def query_llm(ctx, prompt, private_channel=None):
                     if response.status == 200:
                         json_data = await response.json()
                         response_text = json_data.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
-
-                        # Check for member mentions in the response
-                        response_text = await inject_mentions(ctx, response_text)
-
                         return response_text
                     else:
                         return f"API Error: {response.status}"
