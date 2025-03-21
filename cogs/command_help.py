@@ -57,7 +57,7 @@ class CommandHelp(commands.Cog):
             user_message = message.content
 
             # Query the LLM for a response using the user's message
-            response = await query_llm(user_message)  # Using the generic query_llm for a more general response
+            response = await query_llm(prompt=user_message)  # Pass the user_message as the 'prompt' argument
             
             # Use the embed utility to format the response
             embed = await create_embed(
