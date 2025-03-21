@@ -1,6 +1,7 @@
 import aiohttp
-from config import OPENWEBUI_API_KEY, OPENWEBUI_API_URL, MODEL_NAME, BOT_NAME, COMMAND_PREFIX
 import json
+from utils.embed import create_embed  # Import the create_embed function from utils/embed.py
+from config import OPENWEBUI_API_KEY, OPENWEBUI_API_URL, MODEL_NAME, BOT_NAME, COMMAND_PREFIX
 
 async def query_llm(ctx, prompt, private_channel=None):
     """Send a request to the LLM API and return the generated response."""
@@ -59,8 +60,24 @@ async def query_llm_with_command_info(command_info, user_question, ctx, private_
         BOT_NAME=BOT_NAME
     )
 
-    # Pass the formatted prompt to the query_llm function and get the response
-    return await query_llm(ctx, prompt, private_channel)
+    # Get the LLM response
+    response_text = await query_llm(ctx, prompt, private_channel)
+
+    # Use the `create_embed` function from utils/embed.py to create the embed
+    embed = await create_embed(
+        title=f"Help for Command: {command_info['Command_Name']}",
+        description=response_text,
+        footer_text=f"{command_info['Command_Name']} - Help",
+    )
+
+    # Add additional fields to the embed for description and example
+    embed.add_field(name="Description", value=description, inline=False)
+    embed.add_field(name="Example", value=example, inline=False)
+
+    # Send the embed in the channel
+    await ctx.send(embed=embed)
+
+    return response_text
 
 def load_commands():
     """Function to load command data from the commands.json file."""
