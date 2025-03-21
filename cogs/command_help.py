@@ -16,8 +16,8 @@ class CommandHelp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="help", aliases=["h", "commands"])
-    async def help_command(self, ctx, *, command_name=None):
+    @commands.command(name="command_help", aliases=["h", "commands"])
+    async def command_help(self, ctx, *, command_name=None):
         """
         This command is responsible for providing help with a specific command or
         listing available commands if no command name is given.
@@ -35,13 +35,13 @@ class CommandHelp(commands.Cog):
                 # Send the response to the private channel or current channel
                 await ctx.author.send(response)
             else:
-                await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}help` for a list of commands.")
+                await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}command_help` for a list of commands.")
         else:
             # If no command name is provided, list all available commands
             help_message = "Here are the available commands:\n"
             for command_name in commands_list:  # Updated to use commands_list
                 help_message += f" - `{COMMAND_PREFIX}{command_name}`\n"
-            help_message += f"Use `{COMMAND_PREFIX}help <command_name>` for more information on a specific command."
+            help_message += f"Use `{COMMAND_PREFIX}command_help <command_name>` for more information on a specific command."
             await ctx.send(help_message)
 
 # The setup function must be asynchronous!
