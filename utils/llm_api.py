@@ -31,9 +31,13 @@ async def query_llm(ctx, prompt, private_channel=None):
                         response_text = json_data.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
                         return response_text
                     else:
-                        return f"API Error: {response.status}"
-        except Exception as e:
+                        return f"API Error: {response.status} - {response.text()}"
+        except aiohttp.ClientError as e:
             return f"Request Failed: {e}"
+        except json.JSONDecodeError:
+            return "Error: Failed to decode the response from the API."
+        except Exception as e:
+            return f"Unexpected error: {e}"
 
 async def query_llm_with_command_info(command_info, user_question, ctx, private_channel=None):
     """Process command-specific context and user question, then send to LLM."""
@@ -43,8 +47,13 @@ async def query_llm_with_command_info(command_info, user_question, ctx, private_
     description = command_info.get("Description", "No description available.")
 
     # Load prompt templates from prompts.json
-    with open('data/prompts.json', 'r') as file:
-        prompts_data = json.load(file)
+    try:
+        with open('data/prompts.json', 'r') as file:
+            prompts_data = json.load(file)
+    except FileNotFoundError:
+        return "Error: prompts.json file not found."
+    except json.JSONDecodeError:
+        return "Error: Failed to parse prompts.json file."
 
     # Use the 'help_detailed' template by default
     prompt_template = prompts_data.get("help_detailed", {}).get("LLM_Message", "No prompt available.")
@@ -88,5 +97,10 @@ async def query_llm_with_prompt(prompt_name, ctx, private_channel=None):
 
 def load_commands():
     """Function to load command data from the commands.json file."""
-    with open('data/commands.json', 'r') as file:
-        return {cmd['Command_Name'].lower(): cmd for cmd in json.load(file)}
+    try:
+        with open('data/commands.json', 'r') as file:
+            return {cmd['Command_Name'].lower(): cmd for cmd in json.load(file)}
+    except FileNotFoundError:
+        return "Error: commands.json file not found."
+    except json.JSONDecodeError:
+        return "Error: Failed to parse commands.json file."
