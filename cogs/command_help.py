@@ -20,28 +20,27 @@ class CommandHelp(commands.Cog):
     @commands.command(name="command_help", aliases=["h", "commands"])
     async def command_help(self, ctx, *, command_name=None):
         """
-        This command is responsible for providing help with a specific command or
-        listing available commands if no command name is given.
+        This command provides help for a specific command (via DM) or lists all available commands
+        if no command name is given.
         """
         if command_name:
             # If a command name is provided, give detailed help for that command
             command_info = commands_list.get(command_name.lower())
 
             if command_info:
-                # Prepare command info and send it to LLM for further processing
-                description = command_info.get("Description", "No description available.")
+                # Prepare command info and send it to the LLM for further processing
                 user_question = f"How can I use the command '{command_name}'?"
                 # Call the function that queries the LLM with command info and user question
                 response = await query_llm_with_command_info(command_info, user_question, ctx)
-                # Send the response to the private channel or current channel
+                # Send the response to the user via DM
                 await ctx.author.send(response)
             else:
                 await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}command_help` for a list of commands.")
         else:
             # If no command name is provided, list all available commands
             help_message = "Here are the available commands:\n"
-            for command_name in commands_list:
-                help_message += f" - `{COMMAND_PREFIX}{command_name}`\n"
+            for command in commands_list:
+                help_message += f" - `{COMMAND_PREFIX}{command}`\n"
             help_message += f"Use `{COMMAND_PREFIX}command_help <command_name>` for more information on a specific command."
             await ctx.send(help_message)
 
@@ -53,17 +52,18 @@ class CommandHelp(commands.Cog):
             if message.author == self.bot.user:
                 return
 
-            # Get the message the user sent
+            # Get the user's message content
             user_message = message.content
 
-            # Query the LLM for a response using the user's message
-            response = await query_llm(prompt=user_message)  # Pass the user_message as the 'prompt' argument
+            # Query the LLM for a response using the user's message.
+            # Pass message.channel as ctx since it supports the typing() method.
+            response = await query_llm(ctx=message.channel, prompt=user_message)
             
             # Use the embed utility to format the response
             embed = await create_embed(
                 title="Response from the Bot",
                 description=response,
-                color=discord.Color.blue(),  # You can change the color if you prefer
+                color=discord.Color.blue(),  # Customize the color if desired
             )
 
             # Send the embed back to the user via DM
