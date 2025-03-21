@@ -46,7 +46,7 @@ async def query_llm_with_command_info(command_info, user_question, ctx, private_
     with open('data/prompts.json', 'r') as file:
         prompts_data = json.load(file)
 
-    # Choose appropriate prompt template
+    # Use the 'help_detailed' template by default
     prompt_template = prompts_data.get("help_detailed", {}).get("LLM_Message", "No prompt available.")
 
     # Replace placeholders with actual values
