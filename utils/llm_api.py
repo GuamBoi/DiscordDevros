@@ -62,6 +62,30 @@ async def query_llm_with_command_info(command_info, user_question, ctx, private_
     # Pass the formatted prompt to the query_llm function and get the response
     return await query_llm(ctx, prompt, private_channel)
 
+async def query_llm_with_prompt(prompt_name, ctx, private_channel=None):
+    """
+    Load a prompt by name from prompts.json and send it to the LLM server.
+    
+    Args:
+        prompt_name (str): The key name of the prompt in prompts.json.
+        ctx: The context from which to show the typing indicator.
+        private_channel (optional): A private channel to show typing in.
+    
+    Returns:
+        str: The response from the LLM server.
+    """
+    try:
+        with open('data/prompts.json', 'r') as file:
+            prompts_data = json.load(file)
+    except FileNotFoundError:
+        return "Error: prompts.json file not found."
+    
+    prompt_message = prompts_data.get(prompt_name, {}).get("LLM_Message", "")
+    if not prompt_message:
+        return f"Error: No prompt found with the name '{prompt_name}'."
+    
+    return await query_llm(ctx, prompt_message, private_channel)
+
 def load_commands():
     """Function to load command data from the commands.json file."""
     with open('data/commands.json', 'r') as file:
