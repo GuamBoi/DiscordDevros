@@ -1,7 +1,7 @@
 {
     "color": {
         "message": "Server Color Selection",
-        "description": "Color Key:",
+        "description": "**Color Key:**",
         "note": "Pick 1 color at a time.",
         "options": {
             "🔴": {"name": "`Red`", "role_id": 1036871222987857930},
@@ -11,10 +11,10 @@
             "🟣": {"name": "`Purple`", "role_id": 1036872927469117450}
         }
     },
-    "game": {
-        "message": "Game Selection",
-        "description": "Server Game Options:",
-        "note": "Select all the games you want to be a part of!",
+    "channels": {
+        "message": "Channel Selection",
+        "description": "**Channel Options:**",
+        "note": "Select the channels you're interested in!",
         "options": {
             "🚀": {"name": "`Lethal Company`", "role_id": 1193313172376015058},
             "🧙‍♀️": {"name": "`Baldur's Gate 3`", "role_id": 1193312758721159208},
@@ -24,10 +24,10 @@
             "💀": {"name": "`Dead By Daylight`", "role_id": 1202837366474149898}
         }
     },
-    "free_game": {
-        "message": "Free Game and Update Channels",
-        "description": "Channel Options:",
-        "note": "Game updates only support 🚀 and 🧙‍♀️.",
+    "notifications": {
+        "message": "Notification Channels",
+        "description": "**Notification Options:**",
+        "note": "Select the notifications you wish to receive.",
         "options": {
             "🆓": {"name": "`Free Games`", "role_id": 1197633716256776243},
             "🔔": {"name": "`Game Updates`", "role_id": 1197621406175866981}
