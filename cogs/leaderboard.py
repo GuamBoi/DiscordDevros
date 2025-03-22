@@ -21,6 +21,7 @@ class Leaderboard(commands.Cog):
             color=discord.Color.green()
         )
         await ctx.send(embed=embed)
+        await ctx.message.delete()
 
     @commands.command(name='leaderboard', help='Show the top 10 users with the highest currency')
     async def leaderboard(self, ctx):
@@ -51,6 +52,7 @@ class Leaderboard(commands.Cog):
             color=discord.Color.gold()
         )
         await ctx.send(embed=embed)
+        await ctx.message.delete()
 
 # Ensure setup() is async and awaits add_cog()
 async def setup(bot):
