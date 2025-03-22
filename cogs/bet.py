@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from utils.economy import load_economy, save_economy, add_currency, remove_currency
 from utils.embed import create_embed
-from config import BETTING_CHANNEL  # Channel ID for betting messages
+from config import BETTING_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
 
 class BetCog(commands.Cog):
     def __init__(self, bot):
@@ -39,9 +39,9 @@ class BetCog(commands.Cog):
         await self.manage_bet_lock(ctx.author.name, 1)
         await self.manage_bet_lock(user_bet_against.name, 1)
 
-        # Create bet challenge embed message
+        # Create bet challenge embed message with dynamic currency display
         bet_message = (
-            f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {amount} currency!\n"
+            f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n"
             f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
         )
         bet_embed = await create_embed(
@@ -60,24 +60,24 @@ class BetCog(commands.Cog):
             "opponent": user_bet_against,
             "amount": amount,
             "ctx": ctx,
-            "channel": bet_channel  # Save channel for subsequent messages
+            "channel": bet_channel
         }
 
     async def resolve_bet(self, ctx, winner, loser, amount):
-        # Since both players' amounts have been deducted, add the entire pot (2× amount) to the winner.
+        # Award the entire pot (2 * amount) to the winner
         add_currency(winner.name, 2 * amount)
-        # Unlock both users
+        # Unlock both players
         await self.manage_bet_lock(winner.name, 0)
         await self.manage_bet_lock(loser.name, 0)
         resolution_embed = await create_embed(
             title="Bet Resolved",
             description=(
-                f"{winner.mention} wins the bet! {2 * amount} currency (the full pot) has been transferred to them!\n"
-                f"{loser.mention} lost {amount} currency."
+                f"{winner.mention} wins the bet! {CURRENCY_SYMBOL}{2 * amount} {CURRENCY_NAME} has been transferred to them!\n"
+                f"{loser.mention} lost {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
             ),
-            color=discord.Color.red()
+            color=discord.Color.purple()
         )
-        await ctx.send(embed=resolution_embed)
+        await ctx.channel.send(embed=resolution_embed)
 
     @commands.command()
     async def bet(self, ctx, amount: int, user_bet_against: discord.User):
@@ -110,8 +110,7 @@ class BetCog(commands.Cog):
 
                 if str(reaction.emoji) == "✅":
                     # Opponent accepted: send agreement embed asking for winner vote in the same channel
-                    # Use Unicode regional indicator symbols for letters (e.g. 🇦 for A)
-                    # Unicode for regional indicators start at 0x1F1E6 ('A')
+                    # Using Unicode regional indicator symbols for letters (e.g. 🇦 for A)
                     challenger_emoji = chr(0x1F1E6 + (ord(challenger.name[0].upper()) - ord('A')))
                     opponent_emoji = chr(0x1F1E6 + (ord(opponent.name[0].upper()) - ord('A')))
                     agreement_message = (
@@ -142,8 +141,8 @@ class BetCog(commands.Cog):
                     refund_embed = await create_embed(
                         title="Bet Declined",
                         description=(
-                            f"{opponent.mention} declined the bet against {challenger.mention}. No currency was exchanged.\n"
-                            f"Both players have been refunded their bet of {amount} currency."
+                            f"{opponent.mention} declined the bet against {challenger.mention}. No {CURRENCY_NAME} was exchanged.\n"
+                            f"Both players have been refunded their bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
                         ),
                         color=discord.Color.red()
                     )
