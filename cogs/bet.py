@@ -2,13 +2,13 @@ import discord
 from discord.ext import commands
 from utils.economy import load_economy, save_economy, add_currency, remove_currency
 from utils.embed import create_embed
-from config import BETTING_CHANNEL
+from config import BETTING_CHANNEL  # Channel ID for betting messages
 
 class BetCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.active_bets = {}
-        self.agreement_phase = {}
+        self.active_bets = {}      # Active bet challenges (by message ID)
+        self.agreement_phase = {}  # Active agreement messages (by message ID)
 
     async def manage_bet_lock(self, username, lock_status):
         data = load_economy(username)
@@ -20,6 +20,7 @@ class BetCog(commands.Cog):
         return data.get('bet_lock', 0) == 0
 
     async def initiate_bet(self, ctx, amount, user_bet_against):
+        # Check if both users can place bets
         if not await self.can_place_bet(ctx.author.name):
             await ctx.send(f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first.")
             return
@@ -30,9 +31,15 @@ class BetCog(commands.Cog):
             await ctx.send("You must bet a positive amount!")
             return
 
+        # Deduct the bet amount from both players immediately
+        remove_currency(ctx.author.name, amount)
+        remove_currency(user_bet_against.name, amount)
+
+        # Lock both users from placing new bets until resolved
         await self.manage_bet_lock(ctx.author.name, 1)
         await self.manage_bet_lock(user_bet_against.name, 1)
 
+        # Create bet challenge embed message
         bet_message = (
             f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {amount} currency!\n"
             f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
@@ -53,19 +60,20 @@ class BetCog(commands.Cog):
             "opponent": user_bet_against,
             "amount": amount,
             "ctx": ctx,
-            "channel": bet_channel
+            "channel": bet_channel  # Save channel for subsequent messages
         }
 
     async def resolve_bet(self, ctx, winner, loser, amount):
-        add_currency(winner.name, amount)
-        remove_currency(loser.name, amount)
+        # Since both players' amounts have been deducted, add the entire pot (2× amount) to the winner.
+        add_currency(winner.name, 2 * amount)
+        # Unlock both users
         await self.manage_bet_lock(winner.name, 0)
         await self.manage_bet_lock(loser.name, 0)
         resolution_embed = await create_embed(
             title="Bet Resolved",
             description=(
-                f"{winner.mention} wins the bet! {amount} currency has been transferred to them!\n"
-                f"{loser.mention}, better luck next time!"
+                f"{winner.mention} wins the bet! {2 * amount} currency (the full pot) has been transferred to them!\n"
+                f"{loser.mention} lost {amount} currency."
             ),
             color=discord.Color.purple()
         )
@@ -73,6 +81,7 @@ class BetCog(commands.Cog):
 
     @commands.command()
     async def bet(self, ctx, amount: int, user_bet_against: discord.User):
+        """Place a bet against another user."""
         if ctx.author == user_bet_against:
             await ctx.send("You can't bet against yourself!")
             return
@@ -85,6 +94,7 @@ class BetCog(commands.Cog):
 
         message_id = reaction.message.id
 
+        # Handle challenge stage reactions
         if message_id in self.active_bets:
             bet_data = self.active_bets[message_id]
             if bet_data["stage"] == "challenge":
@@ -94,12 +104,16 @@ class BetCog(commands.Cog):
                 amount = bet_data["amount"]
                 channel = bet_data["channel"]
 
+                # Only process reactions from the opponent
                 if user != opponent:
                     return
 
                 if str(reaction.emoji) == "✅":
-                    challenger_emoji = chr(127462 + (ord(challenger.name[0].upper()) - ord('A')))
-                    opponent_emoji = chr(127462 + (ord(opponent.name[0].upper()) - ord('A')))
+                    # Opponent accepted: send agreement embed asking for winner vote in the same channel
+                    # Use Unicode regional indicator symbols for letters (e.g. 🇦 for A)
+                    # Unicode for regional indicators start at 0x1F1E6 ('A')
+                    challenger_emoji = chr(0x1F1E6 + (ord(challenger.name[0].upper()) - ord('A')))
+                    opponent_emoji = chr(0x1F1E6 + (ord(opponent.name[0].upper()) - ord('A')))
                     agreement_message = (
                         f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n"
                         f"React with {challenger_emoji} for **{challenger.name}** or {opponent_emoji} for **{opponent.name}**."
@@ -120,20 +134,56 @@ class BetCog(commands.Cog):
                         "challenger_emoji": challenger_emoji,
                         "opponent_emoji": opponent_emoji
                     }
+                    # Remove the active challenge since it has moved to agreement phase
                     del self.active_bets[message_id]
 
                 elif str(reaction.emoji) == "❌":
-                    decline_embed = await create_embed(
+                    # Opponent declined: refund both players and notify with an embed
+                    refund_embed = await create_embed(
                         title="Bet Declined",
                         description=(
-                            f"{opponent.mention} declined the bet against {challenger.mention}. No currency was exchanged."
+                            f"{opponent.mention} declined the bet against {challenger.mention}. No currency was exchanged.\n"
+                            f"Both players have been refunded their bet of {amount} currency."
                         ),
                         color=discord.Color.red()
                     )
-                    await channel.send(embed=decline_embed)
+                    await channel.send(embed=refund_embed)
+                    add_currency(challenger.name, amount)
+                    add_currency(opponent.name, amount)
                     await self.manage_bet_lock(challenger.name, 0)
                     await self.manage_bet_lock(opponent.name, 0)
                     del self.active_bets[message_id]
+
+        # Handle agreement phase reactions
+        elif message_id in self.agreement_phase:
+            agreement_data = self.agreement_phase[message_id]
+            challenger = agreement_data['challenger']
+            opponent = agreement_data['opponent']
+            ctx = agreement_data['ctx']
+            amount = agreement_data['amount']
+            challenger_emoji = agreement_data['challenger_emoji']
+            opponent_emoji = agreement_data['opponent_emoji']
+
+            # Only process reactions for the expected emojis
+            if str(reaction.emoji) not in [challenger_emoji, opponent_emoji]:
+                return
+
+            message = reaction.message
+            for react in message.reactions:
+                if str(react.emoji) in [challenger_emoji, opponent_emoji]:
+                    # Collect non-bot users who reacted with this emoji
+                    users_reacted = [u async for u in react.users() if not u.bot]
+                    if challenger in users_reacted and opponent in users_reacted:
+                        # Both players agreed on this emoji; determine the winner accordingly
+                        if str(react.emoji) == challenger_emoji:
+                            winner = challenger
+                            loser = opponent
+                        else:
+                            winner = opponent
+                            loser = challenger
+                        await self.resolve_bet(ctx, winner, loser, amount)
+                        del self.agreement_phase[message_id]
+                        return
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
