@@ -22,21 +22,25 @@ def load_economy(username):
     if os.path.exists(user_file):
         with open(user_file, 'r') as f:
             data = json.load(f)
-        # Ensure the bet_lock and wordle_streak keys exist; if not, add them with default values
+        # Ensure the bet_lock, wordle_streak, and rolls keys exist; if not, add them with default values
         if "bet_lock" not in data:
             data["bet_lock"] = 0
             save_economy(username, data)
         if "wordle_streak" not in data:
             data["wordle_streak"] = 0
             save_economy(username, data)
+        if "rolls" not in data:
+            data["rolls"] = []  # Initialize the rolls as an empty list
+            save_economy(username, data)
         return data
     else:
-        # Create a new economy file with default values, including bet_lock set to 0 and wordle_streak set to 0
+        # Create a new economy file with default values, including bet_lock set to 0, wordle_streak set to 0, and empty rolls
         data = {
             "username": username,
             "currency": DEFAULT_CURRENCY_GIVE,
             "bet_lock": 0,
-            "wordle_streak": 0  # Initialize the wordle_streak
+            "wordle_streak": 0,  # Initialize the wordle_streak
+            "rolls": []  # Initialize the rolls as an empty list
         }
         save_economy(username, data)
         return data
@@ -79,3 +83,26 @@ def set_wordle_streak(username, streak):
     data["wordle_streak"] = streak
     save_economy(username, data)
     return streak
+
+def add_role(username, role_name):
+    """Add a role to the user's rolls list."""
+    data = load_economy(username)
+    if role_name not in data["rolls"]:
+        data["rolls"].append(role_name)
+        save_economy(username, data)
+        return True
+    return False
+
+def remove_role(username, role_name):
+    """Remove a role from the user's rolls list."""
+    data = load_economy(username)
+    if role_name in data["rolls"]:
+        data["rolls"].remove(role_name)
+        save_economy(username, data)
+        return True
+    return False
+
+def has_role(username, role_name):
+    """Check if a user already has the specified role."""
+    data = load_economy(username)
+    return role_name in data["rolls"]
