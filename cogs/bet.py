@@ -75,7 +75,7 @@ class BetCog(commands.Cog):
                 f"{winner.mention} wins the bet! {CURRENCY_SYMBOL}{2 * amount} {CURRENCY_NAME} has been transferred to them!\n"
                 f"{loser.mention} lost {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
             ),
-            color=discord.Color.purple()
+            color=discord.Color.red()
         )
         await ctx.channel.send(embed=resolution_embed)
 
