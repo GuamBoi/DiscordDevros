@@ -21,7 +21,7 @@ class ServerCustomization(commands.Cog):
             with open(self.rolls_file, 'r') as f:
                 return json.load(f)
         else:
-            return {"color_roles": [], "game_roles": [], "update_channels": []}
+            return {"color_roles": [], "channels_roles": [], "update_channels": []}
 
     def save_rolls(self):
         self.ensure_data_folder()
@@ -39,21 +39,21 @@ class ServerCustomization(commands.Cog):
 
         # Prepare the embeds using the role options from rolls.json
         color_embed = await self.create_role_embed("color")
-        game_embed = await self.create_role_embed("game")
-        free_game_embed = await self.create_role_embed("free_game")
+        channels_embed = await self.create_role_embed("channels")
+        notifications_embed = await self.create_role_embed("notifications")
 
         # Send embeds to the specified channel
         await rolls_channel.send(embed=color_embed)
-        await rolls_channel.send(embed=game_embed)
-        await rolls_channel.send(embed=free_game_embed)
+        await rolls_channel.send(embed=channels_embed)
+        await rolls_channel.send(embed=notifications_embed)
 
         # Add reactions based on the emojis in the rolls.json file
         color_msg = await rolls_channel.send(embed=color_embed)
-        game_msg = await rolls_channel.send(embed=game_embed)
-        free_game_msg = await rolls_channel.send(embed=free_game_embed)
+        channels_msg = await rolls_channel.send(embed=channels_embed)
+        notifications_msg = await rolls_channel.send(embed=notifications_embed)
         await self.add_reactions(color_msg, "color")
-        await self.add_reactions(game_msg, "game")
-        await self.add_reactions(free_game_msg, "free_game")
+        await self.add_reactions(channels_msg, "channels")
+        await self.add_reactions(notifications_msg, "notifications")
 
     async def create_role_embed(self, role_type):
         # Get the role data from rolls.json
@@ -125,10 +125,10 @@ class ServerCustomization(commands.Cog):
         # Determine the role type based on the emoji reacted to
         if emoji in self.rolls_data.get("color", {}).get("options", {}):
             return "color"
-        elif emoji in self.rolls_data.get("game", {}).get("options", {}):
-            return "game"
-        elif emoji in self.rolls_data.get("free_game", {}).get("options", {}):
-            return "free_game"
+        elif emoji in self.rolls_data.get("channels", {}).get("options", {}):
+            return "channels"
+        elif emoji in self.rolls_data.get("notifications", {}).get("options", {}):
+            return "notifications"
         return None
 
 async def setup(bot):
