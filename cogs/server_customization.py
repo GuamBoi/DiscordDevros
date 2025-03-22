@@ -3,6 +3,7 @@ from discord.ext import commands
 import json
 import os
 from utils.embed import create_embed
+import config  # Import config.py
 
 class ServerCustomization(commands.Cog):
     def __init__(self, bot):
@@ -29,17 +30,27 @@ class ServerCustomization(commands.Cog):
 
     @commands.command(name='server_customization')
     async def server_customization(self, ctx):
+        # Fetch the channel from the config using ROLLS_CHANNEL
+        rolls_channel = self.bot.get_channel(config.ROLLS_CHANNEL)
+
+        if rolls_channel is None:
+            await ctx.send("Invalid channel ID in the config file.")
+            return
+
         # Prepare the embeds using the role options from rolls.json
         color_embed = await self.create_role_embed("color")
         game_embed = await self.create_role_embed("game")
         free_game_embed = await self.create_role_embed("free_game")
 
-        # Send embeds
-        color_msg = await ctx.send(embed=color_embed)
-        game_msg = await ctx.send(embed=game_embed)
-        free_game_msg = await ctx.send(embed=free_game_embed)
+        # Send embeds to the specified channel
+        await rolls_channel.send(embed=color_embed)
+        await rolls_channel.send(embed=game_embed)
+        await rolls_channel.send(embed=free_game_embed)
 
         # Add reactions based on the emojis in the rolls.json file
+        color_msg = await rolls_channel.send(embed=color_embed)
+        game_msg = await rolls_channel.send(embed=game_embed)
+        free_game_msg = await rolls_channel.send(embed=free_game_embed)
         await self.add_reactions(color_msg, "color")
         await self.add_reactions(game_msg, "game")
         await self.add_reactions(free_game_msg, "free_game")
@@ -47,7 +58,7 @@ class ServerCustomization(commands.Cog):
     async def create_role_embed(self, role_type):
         # Get the role data from rolls.json
         role_data = self.rolls_data.get(role_type, {})
-        
+
         # Check if role_data exists for the requested role_type
         if not role_data:
             return await create_embed("No Roles", f"No roles found for '{role_type}'.", color=discord.Color.red())
