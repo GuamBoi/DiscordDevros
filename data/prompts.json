@@ -6,6 +6,7 @@
     "LLM_Message": "Your goal is to answer the following User Question about the `{Command_Name}` command. The command prefix `{COMMAND_PREFIX}` MUST be used Infront of the command like `{COMMAND_PREFIX}{Command_Name}` in order to have the command invoked properly and MUST be included at the beginning of the message.\nAbout the `{Command_Name}` Command: {LLM_Context}\nExample Usage: {Example}\n\nOnly explain how to use the command, and not how to use or navigate Discord unless the `About the {Command_Name} Command:` section included information about the command being required to be used a certain channel on the server. Provide relevant examples from the context above, and ensure the user understands how to properly use the command.\n\nUser's Question: {USER_QUESTION}"
   },
   "wordle_prompt": {
-    "LLM_Message": "Generate a random 5-letter word. Your final answer must ONLY contain the 5 letter word. Use your knowledge base to help generate one."
+    "LLM_Message": "Generate a random 5-letter word. Your final answer must ONLY contain the 5-letter word with no additional formatting, punctuation, or symbols. Provide only the word as plain text."
+"
   }
 }
