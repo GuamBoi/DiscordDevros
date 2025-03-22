@@ -47,7 +47,7 @@ class Leaderboard(commands.Cog):
             leaderboard_text += f"{i}. {user_tag} - {CURRENCY_SYMBOL}{currency}\n"
 
         embed = await create_embed(
-            title=f"Top 10 {CURRENCY_NAME} Leaderboard",
+            title=f"Top 10 {CURRENCY_NAME} Wallets",
             description=leaderboard_text,
             color=discord.Color.gold()
         )
