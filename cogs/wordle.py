@@ -3,7 +3,7 @@ from discord.ext import commands
 import os
 import json
 import random
-from config import GAME_WIN, GAME_LOSE, ECONOMY_FOLDER
+from config import GAME_WIN, GAME_LOSE, ECONOMY_FOLDER, WORDLE_CHANNEL
 from utils import economy
 from utils.embed import create_embed
 from utils.llm_api import query_llm_with_prompt
@@ -60,7 +60,13 @@ class Wordle(commands.Cog):
 
     @commands.command(name="wordle")
     async def wordle(self, ctx):
+        await ctx.message.delete()
         username = ctx.author.name
+        channel = self.bot.get_channel(WORDLE_CHANNEL)
+
+        if not channel:
+            await ctx.send(f"Wordle channel not found. Please check the configuration.")
+            return
 
         # Try generating word with LLM
         word = (await query_llm_with_prompt("wordle_prompt", ctx)).strip().lower()
@@ -78,11 +84,12 @@ class Wordle(commands.Cog):
 
         # Create game state
         embed = await create_embed("Wordle Game", f"A new Wordle game has started! You have {MAX_ATTEMPTS} attempts to guess the word.")
-        message = await ctx.send(embed=embed)
+        message = await channel.send(embed=embed)
         active_games[username] = {"answer": word, "attempts": 0, "guesses": [], "message": message}
 
     @commands.command(name="guess")
     async def guess(self, ctx, guess_word: str):
+        await ctx.message.delete()
         username = ctx.author.name
         guess_word = guess_word.lower().strip()
 
@@ -119,6 +126,25 @@ class Wordle(commands.Cog):
         
         embed = await create_embed("Wordle Game", description)
         await game["message"].edit(embed=embed)
+
+    @commands.command(name="wordle_streaks")
+    async def wordle_streaks(self, ctx):
+        streaks = []
+        for filename in os.listdir(ECONOMY_FOLDER):
+            if filename.endswith(".json"):
+                filepath = os.path.join(ECONOMY_FOLDER, filename)
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                streak = data.get("wordle_streak", 0)
+                username = data.get("username", filename[:-5])
+                streaks.append((username, streak))
+
+        streaks.sort(key=lambda x: x[1], reverse=True)
+        top10 = streaks[:10]
+
+        description = "\n".join([f"**{i+1}. {username}** - {streak}" for i, (username, streak) in enumerate(top10)])
+        embed = await create_embed("🏆 Wordle Streak Leaderboard 🏆", description if top10 else "No streak data available.")
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Wordle(bot))
