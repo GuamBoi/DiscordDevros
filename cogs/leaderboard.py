@@ -17,7 +17,7 @@ class Leaderboard(commands.Cog):
         
         embed = await create_embed(
             title=f"{CURRENCY_NAME} Balance",
-            description=f"You currently have {CURRENCY_SYMBOL}{balance_value} {CURRENCY_NAME}.",
+            description=f"You currently have {CURRENCY_SYMBOL}{balance_value}.",
             color=discord.Color.green()
         )
         await ctx.send(embed=embed)
@@ -43,7 +43,7 @@ class Leaderboard(commands.Cog):
             # Try to get a member from the guild to tag them; otherwise just show the username.
             member = discord.utils.get(ctx.guild.members, name=username)
             user_tag = member.mention if member else username
-            leaderboard_text += f"{i}. {user_tag} - {CURRENCY_SYMBOL}{currency} {CURRENCY_NAME}\n"
+            leaderboard_text += f"{i}. {user_tag} - {CURRENCY_SYMBOL}{currency}\n"
 
         embed = await create_embed(
             title=f"Top 10 {CURRENCY_NAME} Leaderboard",
