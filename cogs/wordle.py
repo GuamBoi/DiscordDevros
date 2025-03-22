@@ -34,6 +34,26 @@ def get_random_word_from_file():
         words = [line.strip() for line in f if len(line.strip()) == 5]
     return random.choice(words) if words else None
 
+def generate_feedback(answer: str, guess: str) -> str:
+    feedback = ""
+    for i, char in enumerate(guess):
+        if char == answer[i]:
+            feedback += "🟩"
+        elif char in answer:
+            feedback += "🟨"
+        else:
+            feedback += "⬜"
+    return feedback
+
+def build_game_description(game_state) -> str:
+    description = ""
+    for guess in game_state["guesses"]:
+        feedback = generate_feedback(game_state["answer"], guess)
+        description += f"Guess: `{guess}` - {feedback}\n"
+    attempts_left = MAX_ATTEMPTS - game_state["attempts"]
+    description += f"\nAttempts remaining: **{attempts_left}**"
+    return description
+
 class Wordle(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
