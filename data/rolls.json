@@ -1,0 +1,5 @@
+{
+    "color_roles": ["Red", "Blue", "Green"],
+    "game_roles": ["Chess", "Poker", "Mahjong"],
+    "update_channels": ["news", "updates", "announcements"]
+}
