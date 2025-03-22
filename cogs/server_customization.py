@@ -93,6 +93,10 @@ class ServerCustomization(commands.Cog):
         if not role_type:
             return
 
+        # Check if it's a color role (exclude sending messages for color roles)
+        if role_type == "color":
+            return
+
         role_data = self.rolls_data.get(role_type, {}).get("options", {})
         role_info = role_data.get(reaction.emoji)
 
@@ -100,7 +104,10 @@ class ServerCustomization(commands.Cog):
             role = discord.utils.get(user.guild.roles, id=role_info["role_id"])
             if role:
                 await user.add_roles(role)
-                await reaction.message.channel.send(f"{user.mention} has been given the {role.name} role!")
+                # Send a welcome message to the WELCOME_CHANNEL
+                welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
+                if welcome_channel:
+                    await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction, user):
@@ -112,6 +119,10 @@ class ServerCustomization(commands.Cog):
         if not role_type:
             return
 
+        # Check if it's a color role (exclude sending messages for color roles)
+        if role_type == "color":
+            return
+
         role_data = self.rolls_data.get(role_type, {}).get("options", {})
         role_info = role_data.get(reaction.emoji)
 
@@ -119,7 +130,10 @@ class ServerCustomization(commands.Cog):
             role = discord.utils.get(user.guild.roles, id=role_info["role_id"])
             if role:
                 await user.remove_roles(role)
-                await reaction.message.channel.send(f"{user.mention} has been removed from the {role.name} role!")
+                # Send a goodbye message to the GOODBYE_CHANNEL
+                goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
+                if goodbye_channel:
+                    await goodbye_channel.send(f"{user.mention} has been removed from the {role.name} role. Goodbye!")
 
     def get_role_type_from_emoji(self, emoji):
         # Determine the role type based on the emoji reacted to
