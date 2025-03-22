@@ -1,6 +1,6 @@
 import os
 import json
-from config import ECONOMY_FOLDER, DEFAULT_CURRENCY_GIVE, DEFAULT_CURRENCY_TAKE, CURRENCY_NAME
+from config import ECONOMY_FOLDER, DEFAULT_CURRENCY_GIVE, DEFAULT_CURRENCY_TAKE, CURRENCY_NAME, GAME_WIN
 
 # Ensure the economy folder exists inside the 'data' folder
 if not os.path.exists(ECONOMY_FOLDER):
@@ -22,17 +22,21 @@ def load_economy(username):
     if os.path.exists(user_file):
         with open(user_file, 'r') as f:
             data = json.load(f)
-        # Ensure the bet_lock key exists; if not, add it with default value 0
+        # Ensure the bet_lock and wordle_streak keys exist; if not, add them with default values
         if "bet_lock" not in data:
             data["bet_lock"] = 0
             save_economy(username, data)
+        if "wordle_streak" not in data:
+            data["wordle_streak"] = 0
+            save_economy(username, data)
         return data
     else:
-        # Create a new economy file with default values, including bet_lock set to 0
+        # Create a new economy file with default values, including bet_lock set to 0 and wordle_streak set to 0
         data = {
             "username": username,
             "currency": DEFAULT_CURRENCY_GIVE,
-            "bet_lock": 0
+            "bet_lock": 0,
+            "wordle_streak": 0  # Initialize the wordle_streak
         }
         save_economy(username, data)
         return data
@@ -64,3 +68,14 @@ def get_balance(username):
 def get_currency_name():
     """Retrieve the configured currency name."""
     return CURRENCY_NAME
+
+def get_wordle_streak(username):
+    """Retrieve the current Wordle streak for a user."""
+    return load_economy(username)["wordle_streak"]
+
+def set_wordle_streak(username, streak):
+    """Set the Wordle streak for a user."""
+    data = load_economy(username)
+    data["wordle_streak"] = streak
+    save_economy(username, data)
+    return streak
