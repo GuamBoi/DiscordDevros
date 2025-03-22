@@ -54,7 +54,7 @@ class DiceCog(commands.Cog):
 
     @commands.command()
     async def roll(self, ctx):
-        await self.roll_dice(ctx, "roll", 6, discord.Color.blue())
+        await self.roll_dice(ctx, "d6", 6, discord.Color.blue())
 
     @commands.command()
     async def d8(self, ctx):
