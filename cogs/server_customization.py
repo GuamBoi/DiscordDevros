@@ -63,7 +63,7 @@ class ServerCustomization(commands.Cog):
         return await create_embed(
             message,
             f"{description}\n\n{options_text}",
-            color=discord.Color.random()  # Random color to differentiate the embeds
+            color=discord.Color.blue()
         )
 
     async def add_reactions(self, message, role_type):
