@@ -9,6 +9,7 @@ from config import BETTING_CHANNEL  # Channel ID for betting messages
 class BetCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.active_bets = {}  # Track active bets using message IDs
 
     async def manage_bet_lock(self, username, lock_status):
         """Update the bet_lock status in the user's economy file."""
@@ -19,7 +20,7 @@ class BetCog(commands.Cog):
     async def can_place_bet(self, username):
         """Check if the user can place a bet (bet_lock is not 1)."""
         data = load_economy(username)
-        return data.get('bet_lock', 0) == 0  # 0 means they can bet
+        return data.get('bet_lock', 0) == 0
 
     async def initiate_bet(self, ctx, amount, user_bet_against):
         """Initiate the bet between two users."""
@@ -52,12 +53,20 @@ class BetCog(commands.Cog):
         await bet_message.add_reaction("✅")
         await bet_message.add_reaction("❌")
 
-    async def resolve_bet(self, ctx, winner, loser, amount):
-        add_currency(winner, amount)
-        remove_currency(loser, amount)
+        # Store the bet details using message ID
+        self.active_bets[bet_message.id] = {
+            "challenger": ctx.author,
+            "opponent": user_bet_against,
+            "amount": amount,
+            "ctx": ctx
+        }
 
-        await self.manage_bet_lock(winner, 0)
-        await self.manage_bet_lock(loser, 0)
+    async def resolve_bet(self, ctx, winner, loser, amount):
+        add_currency(winner.name, amount)
+        remove_currency(loser.name, amount)
+
+        await self.manage_bet_lock(winner.name, 0)
+        await self.manage_bet_lock(loser.name, 0)
 
         await ctx.send(f"{winner.mention} wins the bet! {amount} currency has been transferred to them!")
         await ctx.send(f"{loser.mention}, better luck next time!")
@@ -69,6 +78,38 @@ class BetCog(commands.Cog):
             await ctx.send("You can't bet against yourself!")
             return
         await self.initiate_bet(ctx, amount, user_bet_against)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        """Handle bet acceptance or decline."""
+        if user.bot:
+            return
+
+        message_id = reaction.message.id
+        if message_id not in self.active_bets:
+            return
+
+        bet_data = self.active_bets[message_id]
+        challenger = bet_data['challenger']
+        opponent = bet_data['opponent']
+        amount = bet_data['amount']
+        ctx = bet_data['ctx']
+
+        # Ensure only the challenged user can respond
+        if user != opponent:
+            return
+
+        # Handle reactions
+        if str(reaction.emoji) == "✅":
+            await ctx.send(f"{opponent.mention} accepted the bet! Let the competition begin!")
+            await self.resolve_bet(ctx, opponent, challenger, amount)
+        elif str(reaction.emoji) == "❌":
+            await ctx.send(f"{opponent.mention} declined the bet. No currency was exchanged.")
+            await self.manage_bet_lock(challenger.name, 0)
+            await self.manage_bet_lock(opponent.name, 0)
+
+        # Clean up
+        del self.active_bets[message_id]
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
