@@ -55,7 +55,6 @@ class BetCog(commands.Cog):
         await bet_msg.add_reaction("✅")
         await bet_msg.add_reaction("❌")
 
-        # Store bet details; stage "challenge" means waiting for opponent's decision
         self.active_bets[bet_msg.id] = {
             "stage": "challenge",
             "challenger": ctx.author,
@@ -91,7 +90,6 @@ class BetCog(commands.Cog):
 
         message_id = reaction.message.id
 
-        # Check if reaction is on a bet challenge message
         if message_id in self.active_bets:
             bet_data = self.active_bets[message_id]
             stage = bet_data.get("stage", "challenge")
@@ -100,76 +98,18 @@ class BetCog(commands.Cog):
             opponent = bet_data["opponent"]
             amount = bet_data["amount"]
 
-            # Stage: challenge – waiting for opponent's decision
             if stage == "challenge":
-                # Only opponent's reaction is considered here
                 if user != opponent:
                     return
 
                 if str(reaction.emoji) == "✅":
-                    await ctx.send(f"{opponent.mention} accepted the bet! Now, both parties, please confirm the winner.")
-                    # Send confirmation message
-                    confirm_text = (
-                        f"{challenger.mention} and {opponent.mention}, please confirm who won the bet.\n"
-                        f"React with 🇦 if {challenger.mention} (the challenger) won, or with 🇧 if {opponent.mention} (the opponent) won."
-                    )
-                    confirm_embed = await create_embed(
-                        title="Bet Winner Confirmation",
-                        description=confirm_text,
-                        color=discord.Color.blue()
-                    )
-                    confirm_msg = await reaction.message.channel.send(embed=confirm_embed)
-                    await confirm_msg.add_reaction("🇦")
-                    await confirm_msg.add_reaction("🇧")
-                    # Update bet data for confirmation stage
-                    bet_data["stage"] = "confirm"
-                    bet_data["confirm_msg_id"] = confirm_msg.id
-                    bet_data["votes"] = {}
+                    await ctx.send(f"{opponent.mention} accepted the bet! Let the competition begin!")
                 elif str(reaction.emoji) == "❌":
                     await ctx.send(f"{opponent.mention} declined the bet. No currency was exchanged.")
                     await self.manage_bet_lock(challenger.name, 0)
                     await self.manage_bet_lock(opponent.name, 0)
-                    del self.active_bets[message_id]
-            return
 
-        # Check if reaction is on a confirmation message for a bet
-        for bet_id, bet_data in list(self.active_bets.items()):
-            if bet_data.get("stage") != "confirm":
-                continue
-            if bet_data.get("confirm_msg_id") != reaction.message.id:
-                continue
-
-            # Only consider reactions from challenger or opponent
-            if user not in [bet_data['challenger'], bet_data['opponent']]:
-                return
-
-            # Only accept 🇦 or 🇧 reactions
-            if str(reaction.emoji) not in ["🇦", "🇧"]:
-                return
-
-            # Record the vote
-            bet_data.setdefault("votes", {})[user.id] = str(reaction.emoji)
-
-            # Check if both parties have voted
-            if len(bet_data["votes"]) < 2:
-                return
-
-            votes = list(bet_data["votes"].values())
-            if votes[0] == votes[1]:
-                # Both parties agreed on the result
-                if votes[0] == "🇦":
-                    winner = bet_data['challenger']
-                    loser = bet_data['opponent']
-                else:
-                    winner = bet_data['opponent']
-                    loser = bet_data['challenger']
-                await self.resolve_bet(ctx, winner, loser, amount)
-                await reaction.message.channel.send(
-                    f"Bet resolved: {winner.mention} wins {amount} currency!"
-                )
-                del self.active_bets[bet_id]
-            else:
-                # Votes do not match; ask them to re-vote\n                await reaction.message.channel.send(\n                    f"{bet_data['challenger'].mention} and {bet_data['opponent'].mention}, your votes do not match. Please re-vote."\n                )\n                bet_data["votes"] = {}\n                try:\n                    await reaction.message.clear_reactions()\n                    await reaction.message.add_reaction("🇦")\n                    await reaction.message.add_reaction("🇧")\n                except Exception:\n                    pass\n            return
+                del self.active_bets[message_id]
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
