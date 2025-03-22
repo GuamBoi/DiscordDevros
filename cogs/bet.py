@@ -60,7 +60,7 @@ class BetCog(commands.Cog):
             "opponent": user_bet_against,
             "amount": amount,
             "ctx": ctx,
-            "channel": bet_channel
+            "channel": bet_channel  # Save channel for subsequent messages
         }
 
     async def resolve_bet(self, ctx, winner, loser, amount):
@@ -75,9 +75,11 @@ class BetCog(commands.Cog):
                 f"{winner.mention} wins the bet! {CURRENCY_SYMBOL}{2 * amount} {CURRENCY_NAME} has been transferred to them!\n"
                 f"{loser.mention} lost {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
             ),
-            color=discord.Color.red()
+            color=discord.Color.purple()
         )
-        await ctx.channel.send(embed=resolution_embed)
+        # Send the resolved embed to the BETTING_CHANNEL
+        betting_channel = self.bot.get_channel(BETTING_CHANNEL)
+        await betting_channel.send(embed=resolution_embed)
 
     @commands.command()
     async def bet(self, ctx, amount: int, user_bet_against: discord.User):
@@ -133,7 +135,8 @@ class BetCog(commands.Cog):
                         "challenger_emoji": challenger_emoji,
                         "opponent_emoji": opponent_emoji
                     }
-                    # Remove the active challenge since it has moved to agreement phase
+                    # Delete the original bet challenge message and remove it from active bets
+                    await reaction.message.delete()
                     del self.active_bets[message_id]
 
                 elif str(reaction.emoji) == "❌":
@@ -151,6 +154,8 @@ class BetCog(commands.Cog):
                     add_currency(opponent.name, amount)
                     await self.manage_bet_lock(challenger.name, 0)
                     await self.manage_bet_lock(opponent.name, 0)
+                    # Delete the original bet challenge message and remove it from active bets
+                    await reaction.message.delete()
                     del self.active_bets[message_id]
 
         # Handle agreement phase reactions
