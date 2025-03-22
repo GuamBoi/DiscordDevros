@@ -12,16 +12,14 @@ class Leaderboard(commands.Cog):
     @commands.command(name='balance', help='Check your current balance')
     async def balance(self, ctx):
         """Display the user's current currency balance."""
-        username = ctx.author.name  # Now using the username instead of user ID
-        balance = load_economy(username)["currency"]
+        username = ctx.author.name  # Using username as key in economy files
+        balance_value = load_economy(username)["currency"]
         
-        # Await the asynchronous create_embed call
         embed = await create_embed(
-            title=f"{ctx.author.name}'s Currency Balance",
-            description=f"You currently have {CURRENCY_SYMBOL}{balance} {CURRENCY_NAME}.",
+            title=f"{CURRENCY_NAME} Balance",
+            description=f"You currently have {CURRENCY_SYMBOL}{balance_value} {CURRENCY_NAME}.",
             color=discord.Color.green()
         )
-        
         await ctx.send(embed=embed)
 
     @commands.command(name='leaderboard', help='Show the top 10 users with the highest currency')
@@ -40,18 +38,18 @@ class Leaderboard(commands.Cog):
         economy_data.sort(key=lambda x: x[1], reverse=True)
         top_10 = economy_data[:10]
 
-        # Create the leaderboard text
         leaderboard_text = ""
         for i, (username, currency) in enumerate(top_10, start=1):
-            leaderboard_text += f"{i}. {username} - {CURRENCY_SYMBOL}{currency} {CURRENCY_NAME}\n"
+            # Try to get a member from the guild to tag them; otherwise just show the username.
+            member = discord.utils.get(ctx.guild.members, name=username)
+            user_tag = member.mention if member else username
+            leaderboard_text += f"{i}. {user_tag} - {CURRENCY_SYMBOL}{currency} {CURRENCY_NAME}\n"
 
-        # Await the asynchronous create_embed call
         embed = await create_embed(
-            title="Top 10 Currency Leaderboard",
+            title=f"Top 10 {CURRENCY_NAME} Leaderboard",
             description=leaderboard_text,
             color=discord.Color.gold()
         )
-
         await ctx.send(embed=embed)
 
 # Ensure setup() is async and awaits add_cog()
