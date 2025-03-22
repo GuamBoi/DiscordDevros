@@ -7,6 +7,5 @@
   },
   "wordle_prompt": {
     "LLM_Message": "Generate a random 5-letter word. Your final answer must ONLY contain the 5-letter word with no additional formatting, punctuation, or symbols. Provide only the word as plain text."
-"
   }
 }
