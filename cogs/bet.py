@@ -1,35 +1,27 @@
-# cogs/bet.py
-
 import discord
 from discord.ext import commands
 from utils.economy import load_economy, save_economy, add_currency, remove_currency
 from utils.embed import create_embed
-from config import BETTING_CHANNEL  # Channel ID for betting messages
+from config import BETTING_CHANNEL
 
 class BetCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.active_bets = {}  # Track active bets using message IDs
+        self.active_bets = {}
+        self.agreement_phase = {}
 
     async def manage_bet_lock(self, username, lock_status):
-        """Update the bet_lock status in the user's economy file."""
         data = load_economy(username)
         data['bet_lock'] = lock_status
         save_economy(username, data)
 
     async def can_place_bet(self, username):
-        """Check if the user can place a bet (bet_lock is not 1)."""
         data = load_economy(username)
         return data.get('bet_lock', 0) == 0
 
     async def initiate_bet(self, ctx, amount, user_bet_against):
-        """Initiate the bet between two users."""
-        if not await self.can_place_bet(ctx.author.name):
-            await ctx.send(f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first.")
-            return
-
-        if not await self.can_place_bet(user_bet_against.name):
-            await ctx.send(f"{user_bet_against.mention} is locked from placing bets. They need to resolve their previous bet first.")
+        if not await self.can_place_bet(ctx.author.name) or not await self.can_place_bet(user_bet_against.name):
+            await ctx.send("One or both users are locked from betting. Resolve previous bets first.")
             return
 
         if amount <= 0:
@@ -60,23 +52,18 @@ class BetCog(commands.Cog):
             "challenger": ctx.author,
             "opponent": user_bet_against,
             "amount": amount,
-            "ctx": ctx,
-            "challenge_msg_id": bet_msg.id
+            "ctx": ctx
         }
 
     async def resolve_bet(self, ctx, winner, loser, amount):
         add_currency(winner.name, amount)
         remove_currency(loser.name, amount)
-
         await self.manage_bet_lock(winner.name, 0)
         await self.manage_bet_lock(loser.name, 0)
-
         await ctx.send(f"{winner.mention} wins the bet! {amount} currency has been transferred to them!")
-        await ctx.send(f"{loser.mention}, better luck next time!")
 
     @commands.command()
     async def bet(self, ctx, amount: int, user_bet_against: discord.User):
-        """Place a bet against another user."""
         if ctx.author == user_bet_against:
             await ctx.send("You can't bet against yourself!")
             return
@@ -84,7 +71,6 @@ class BetCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        """Handle bet acceptance/decline and winner confirmation."""
         if user.bot:
             return
 
@@ -92,24 +78,54 @@ class BetCog(commands.Cog):
 
         if message_id in self.active_bets:
             bet_data = self.active_bets[message_id]
-            stage = bet_data.get("stage", "challenge")
+            stage = bet_data.get("stage")
             ctx = bet_data["ctx"]
             challenger = bet_data["challenger"]
             opponent = bet_data["opponent"]
             amount = bet_data["amount"]
 
-            if stage == "challenge":
-                if user != opponent:
-                    return
-
+            if stage == "challenge" and user == opponent:
                 if str(reaction.emoji) == "✅":
-                    await ctx.send(f"{opponent.mention} accepted the bet! Let the competition begin!")
-                elif str(reaction.emoji) == "❌":
-                    await ctx.send(f"{opponent.mention} declined the bet. No currency was exchanged.")
-                    await self.manage_bet_lock(challenger.name, 0)
-                    await self.manage_bet_lock(opponent.name, 0)
+                    await ctx.send(f"{opponent.mention} accepted the bet! Both users must now agree on the winner.")
+                    
+                    challenger_emoji = f":regional_indicator_{challenger.name[0].lower()}:"
+                    opponent_emoji = f":regional_indicator_{opponent.name[0].lower()}:"
 
-                del self.active_bets[message_id]
+                    agreement_embed = await create_embed(
+                        title="Bet Resolution",
+                        description=(
+                            f"{challenger.mention} and {opponent.mention}, react to decide the winner.\n"
+                            f"React with {challenger_emoji} for {challenger.name} or {opponent_emoji} for {opponent.name}."
+                        ),
+                        color=discord.Color.blue()
+                    )
+                    agreement_msg = await ctx.send(embed=agreement_embed)
+                    await agreement_msg.add_reaction(challenger_emoji)
+                    await agreement_msg.add_reaction(opponent_emoji)
+                    
+                    self.agreement_phase[agreement_msg.id] = {
+                        "challenger": challenger,
+                        "opponent": opponent,
+                        "amount": amount,
+                        "ctx": ctx
+                    }
+
+                    del self.active_bets[message_id]
+
+            elif message_id in self.agreement_phase:
+                agreement_data = self.agreement_phase[message_id]
+                emoji_used = str(reaction.emoji)
+                
+                if emoji_used in [f":regional_indicator_{agreement_data['challenger'].name[0].lower()}:",
+                                  f":regional_indicator_{agreement_data['opponent'].name[0].lower()}:"]:
+                    if len(set(reaction.message.reactions)) == 2:  # Both reacted
+                        if reaction.message.reactions[0].emoji == reaction.message.reactions[1].emoji:
+                            winner = agreement_data['challenger'] if emoji_used == f":regional_indicator_{agreement_data['challenger'].name[0].lower()}:" else agreement_data['opponent']
+                            loser = agreement_data['opponent'] if winner == agreement_data['challenger'] else agreement_data['challenger']
+                            await self.resolve_bet(ctx, winner, loser, agreement_data['amount'])
+                            del self.agreement_phase[message_id]
+                        else:
+                            await ctx.send("Users disagreed on the result. Please try again to resolve the bet.")
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
