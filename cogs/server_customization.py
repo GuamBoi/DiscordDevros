@@ -3,7 +3,7 @@ from discord.ext import commands
 import json
 import os
 from utils.embed import create_embed
-import config  # Import config.py
+import config
 
 class ServerCustomization(commands.Cog):
     def __init__(self, bot):
