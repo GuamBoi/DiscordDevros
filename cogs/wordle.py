@@ -114,7 +114,7 @@ class Wordle(commands.Cog):
             economy.add_currency(user_id, GAME_WIN)
             description += (
                 f"\n\nCongratulations {ctx.author.mention}! You guessed the word in {game['attempts']} attempts."
-                f"\nYour current Wordle streak is **{econ['wordle_streak']}** and you've been awarded **{GAME_WIN} {economy.get_currency_name()}**!"
+                f"\nYour current Wordle streak is **{econ['wordle_streak']}** and you've been awarded **{GAME_WIN} {economy.get_currency_name()}**! "
             )
             embed = await create_embed("Wordle Game - You Won!", description)
             await game["message"].edit(embed=embed)
@@ -168,5 +168,5 @@ class Wordle(commands.Cog):
         embed = await create_embed("Wordle Streak Leaderboard", description)
         await ctx.send(embed=embed)
 
-def setup(bot):
-    bot.add_cog(Wordle(bot))
+async def setup(bot):
+    await bot.add_cog(Wordle(bot))
