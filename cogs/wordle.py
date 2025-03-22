@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 import json
-from config import GAME_WIN, ECONOMY_FOLDER
+from config import GAME_WIN, GAME_LOSE, ECONOMY_FOLDER
 from utils import economy
 from utils.embed import create_embed
 from utils.llm_api import query_llm_with_prompt
@@ -80,7 +80,7 @@ class Wordle(commands.Cog):
         Processes a guess for the active Wordle game.
         The embed is updated after each guess.
         If the guess is correct, the player's Wordle streak is incremented and currency is awarded.
-        If the maximum attempts are reached, the streak is reset.
+        If the maximum attempts are reached, the streak is reset and currency is deducted.
         """
         username = ctx.author.name  # Use username instead of user ID
         guess_word = guess_word.lower().strip()
@@ -126,7 +126,13 @@ class Wordle(commands.Cog):
             econ = economy.load_economy(username)
             econ["wordle_streak"] = 0  # Reset streak on loss
             economy.save_economy(username, econ)
+            
+            # Deduct currency for losing
+            economy.deduct_currency(username, GAME_LOSE)
+            
             description += f"\n\nSorry {ctx.author.mention}, you've used all your attempts. The correct word was **{answer}**. Your Wordle streak has been reset."
+            description += f"\nYou've lost **{GAME_LOSE} {economy.get_currency_name()}** for failing to guess the word."
+            
             embed = await create_embed("Wordle Game - Game Over", description)
             await game["message"].edit(embed=embed)
             del active_games[username]
