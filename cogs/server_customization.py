@@ -4,6 +4,7 @@ import json
 import os
 from utils.embed import create_embed
 import config
+from economy import handle_roll_reaction, load_economy, add_role, remove_role, get_balance  # Import economy functions
 
 class ServerCustomization(commands.Cog):
     def __init__(self, bot):
@@ -90,7 +91,7 @@ class ServerCustomization(commands.Cog):
         if not role_type:
             return
 
-        # Get role info
+        # Get role info from rolls.json
         role_data = self.rolls_data.get(role_type, {}).get("options", {})
         role_info = role_data.get(reaction.emoji)
 
@@ -99,14 +100,16 @@ class ServerCustomization(commands.Cog):
             if role:
                 # Add role to user
                 await user.add_roles(role)
-                # Send a welcome message to the WELCOME_CHANNEL, excluding color roles
-                if role_type != "color":
-                    welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
-                    if welcome_channel:
-                        await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
-                # Ensure color roles are also applied
-                if role_type == "color":
-                    await user.edit(color=role.color)
+                # Update economy (add role to user's rolls)
+                if handle_roll_reaction(user.name, role.name):
+                    # Send a welcome message if it's not a color role
+                    if role_type != "color":
+                        welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
+                        if welcome_channel:
+                            await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
+                    # Ensure color roles are also applied
+                    if role_type == "color":
+                        await user.edit(color=role.color)
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction, user):
@@ -118,7 +121,7 @@ class ServerCustomization(commands.Cog):
         if not role_type:
             return
 
-        # Get role info
+        # Get role info from rolls.json
         role_data = self.rolls_data.get(role_type, {}).get("options", {})
         role_info = role_data.get(reaction.emoji)
 
@@ -127,11 +130,13 @@ class ServerCustomization(commands.Cog):
             if role:
                 # Remove role from user
                 await user.remove_roles(role)
-                # Send a goodbye message to the GOODBYE_CHANNEL, excluding color roles
-                if role_type != "color":
-                    goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
-                    if goodbye_channel:
-                        await goodbye_channel.send(f"{user.mention} has been removed from the {role.name} role. Goodbye!")
+                # Update economy (remove role from user's rolls)
+                if remove_role(user.name, role.name):
+                    # Send a goodbye message if it's not a color role
+                    if role_type != "color":
+                        goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
+                        if goodbye_channel:
+                            await goodbye_channel.send(f"{user.mention} has been removed from the {role.name} role. Goodbye!")
 
     def get_role_type_from_emoji(self, emoji):
         # Determine the role type based on the emoji reacted to
