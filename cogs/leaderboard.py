@@ -1,7 +1,7 @@
 import os
 import discord
 from discord.ext import commands
-from config import ECONOMY_FOLDER, CURRENCY_NAME
+from config import ECONOMY_FOLDER, CURRENCY_NAME, CURRENCY_SYMBOL
 from utils.economy import load_economy
 from utils.embed import create_embed
 
@@ -18,7 +18,7 @@ class Leaderboard(commands.Cog):
         # Await the asynchronous create_embed call
         embed = await create_embed(
             title=f"{ctx.author.name}'s Currency Balance",
-            description=f"You currently have {balance} {CURRENCY_NAME}.",
+            description=f"You currently have {CURRENCY_SYMBOL}{balance} {CURRENCY_NAME}.",
             color=discord.Color.green()
         )
         
@@ -43,7 +43,7 @@ class Leaderboard(commands.Cog):
         # Create the leaderboard text
         leaderboard_text = ""
         for i, (username, currency) in enumerate(top_10, start=1):
-            leaderboard_text += f"{i}. {username} - {currency} {CURRENCY_NAME}\n"
+            leaderboard_text += f"{i}. {username} - {CURRENCY_SYMBOL}{currency} {CURRENCY_NAME}\n"
 
         # Await the asynchronous create_embed call
         embed = await create_embed(
