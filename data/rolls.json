@@ -2,7 +2,7 @@
     "color": {
         "message": "Server Color Selection",
         "description": "**Color Key:**",
-        "note": "Pick 1 color at a time.",
+        "note": "Pick 1 color at a time to change your username color.",
         "options": {
             "🔴": {"name": "`Red`", "role_id": 1036871222987857930},
             "🟡": {"name": "`Yellow`", "role_id": 1036871950464729128},
@@ -14,14 +14,19 @@
     "channels": {
         "message": "Channel Selection",
         "description": "**Channel Options:**",
-        "note": "Select the channels you're interested in!",
+        "note": "Select the channels you want to join to be added to those channles!",
         "options": {
             "🚀": {"name": "`Lethal Company`", "role_id": 1193313172376015058},
             "🧙‍♀️": {"name": "`Baldur's Gate 3`", "role_id": 1193312758721159208},
+            "⛏️": {"name": "`Minecraft`", "role_id": 1224585359313080351},
+            "🏎️": {"name": "`Rocket League`", "role_id": 1228553532752269332},
             "🕰️": {"name": "`Blood on The Clocktower`", "role_id": 1154988413871730688},
             "🐔": {"name": "`Clash of Clans (COC)`", "role_id": 1184233316195516466},
             "🌀": {"name": "`Splitgate`", "role_id": 1193340302782648510},
-            "💀": {"name": "`Dead By Daylight`", "role_id": 1202837366474149898}
+            "💀": {"name": "`Dead By Daylight`", "role_id": 1202837366474149898},
+            "🃏": {"name": "`Hearthstone`", "role_id": 1262227785225863240},
+            "🚜": {"name": "`Stardew Valley`", "role_id": 1274800615121485845},
+            "👽": {"name": "`Doctor Who`", "role_id": 1286477879906930750}
         }
     },
     "notifications": {
