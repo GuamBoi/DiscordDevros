@@ -73,7 +73,7 @@
     },
     {
         "Command_Name": "wordle",
-        "Description": "Starts a Wordle Game! (Words may take time to generate)",
+        "Description": "Starts a Wordle Game. (Words may take time to generate)",
         "Example": "{COMMAND_PREFIX}wordle",
         "LLM_Context": "The `wordle` command starts a game of wordle in the Wordle game channel. The command sends a prompt to {BOT_NAME} asking for a random 5 letter word. This process can be a little slow sometimes, but members should see {BOT_NAME} is typing, showing their word is being generated. Once the word generates members can use `{COMMAND_PREFIX}guess` to start guessing their word. Normal wordle rules apply to the game."
     },
