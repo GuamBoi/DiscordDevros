@@ -2,6 +2,10 @@
 
 DiscordDevros is a Discord bot interconnected with an Open WebUI server to generate unique and more natural language responses. The code is structured in a modular format to allow for easy customization based on the needs of your server. The `cogs` folder contains the code for all commands available on the server. Each script is either an individual command, or a group of commands that function together to create a game or other feature. 
 
+## Setting Up your Open WebUI Server:
+
+## Setting up your Discord Bot:
+
 ## Installation
 
 ### 1. Clone the Repository
@@ -118,12 +122,75 @@ ROLLS_CHANNEL = BETTING_CHANNEL_ID          # Set Roll Selection Channel ID
 }
 ```
 
-### 6. Run the Bot
+### 6. Test the Bot
 
-After setting up the environment, run the bot:
+After setting up the environment, test the bot and try some of the commands after running the following command:
 
 ```sh
 python bot.py
+```
+
+After you test everything ensure your Discord bot continues running after you close your SSH session, you can utilize the `nohup` command. This command allows processes to persist even after your PuTTY session is closed. Close your current PuTTY instance and run the following commands after you log back in:
+
+### 7. Run the Bot Using `nohup`
+
+Enter the Bot Directory and activate the virtual environment again
+
+```bash
+cd DiscordDevros
+source venv/bin/activate
+```
+
+To run your bot so that it continues operating after you disconnect from the SSH session, use the `nohup` command:
+
+```bash
+nohup python bot.py > bot_output.log 2>&1 &
+```
+
+In this command:
+- `nohup` prevents the process from being terminated after the SSH session ends.
+- `python bot.py` executes your bot script.
+- `> bot_output.log` redirects the standard output to a log file named `bot_output.log`.
+- `2>&1` ensures that both standard output and standard error are captured in the log file.
+- `&` runs the process in the background, allowing you to continue using the terminal.
+
+**2. Verify the Bot is Running**
+
+To confirm that your bot is running in the background, you can check the list of running processes:
+
+```bash
+ps aux | grep bot.py
+```
+
+This command will display information about the running `bot.py` process.
+
+**Example PID Output:**
+
+```
+USER    PID   %CPU  %MEM   VSZ   RSS   TTY     STAT   START   TIME  COMMAND
+guam   3132   5.2   4.4  198864 41772  pts/0    Sl    01:45   0:01  python bot.py
+```
+
+### Stopping the Bot 
+- If you need to stop the bot, first identify its Process ID (PID) using the`ps aux | grep bot.py` command, then terminate it:
+	
+```bash
+kill PID
+```
+	
+- **Viewing Logs**: To monitor the bot's output, you can view the log file:
+    
+```bash
+tail -f bot_output.log
+```
+   
+This command will display the log content in real-time.
+
+### Removing the Bot
+
+```bash
+sudo chown -R $USER:$USER ~/DiscordDevros
+rm -rf ~/DiscordDevros
 ```
 
 ## Adding Commands
@@ -180,13 +247,6 @@ async def setup(bot):
         "Example": "",
         "LLM_Context": ""
     }
-```
-
-## Removing the Bot
-
-```bash
-sudo chown -R $USER:$USER ~/DiscordDevros
-rm -rf ~/DiscordDevros
 ```
 
 ## File Structure
@@ -330,9 +390,14 @@ ___
 #### **commands.json**
 
 A `.json` file that provides the bot with information about the different commands for the bot.
+
 #### **prompts.json**
 
 A `.json` file used to send customizable prompts to the Open WebUI LLM. 
+
+#### **rolls.json**
+
+A `.json` file used to dynamically update the `server_customization.py` file embeds for managing server rolls on the server.
 
 ## **utils/** Utility Functions Explained Explained
 
