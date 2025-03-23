@@ -58,6 +58,7 @@ class ServerCustomization(commands.Cog):
         await self.add_reactions(color_message, "color")
         await self.add_reactions(channels_message, "channels")
         await self.add_reactions(notifications_message, "notifications")
+        await ctx.send("Server customization complete!")
 
     async def create_role_embed(self, role_type):
         # Get the role data from rolls.json
@@ -93,6 +94,9 @@ class ServerCustomization(commands.Cog):
         if user == self.bot.user:
             return
 
+        # Debug: print the reaction details
+        print(f"Reaction added by {user}: {reaction.emoji} on message {reaction.message.id}")
+
         # Check if the reaction is on one of the saved messages
         message_id = reaction.message.id
         if message_id == self.rolls_data.get("color_roles_message_id") or \
@@ -106,6 +110,9 @@ class ServerCustomization(commands.Cog):
         if user == self.bot.user:
             return
 
+        # Debug: print the reaction removal details
+        print(f"Reaction removed by {user}: {reaction.emoji} on message {reaction.message.id}")
+
         # Check if the reaction is on one of the saved messages
         message_id = reaction.message.id
         if message_id == self.rolls_data.get("color_roles_message_id") or \
@@ -114,19 +121,23 @@ class ServerCustomization(commands.Cog):
             await self.handle_reaction(reaction, user, "remove")
 
     async def handle_reaction(self, reaction, user, action):
+        # Debug: check which emoji was used
+        print(f"Handling reaction {reaction.emoji} for user {user} with action {action}")
+
         role_type = self.get_role_type_from_emoji(reaction.emoji)
         if not role_type:
+            print("No matching role type found for emoji:", reaction.emoji)
             return
 
-        # Get role info from rolls.json
+        # Get role info from rolls.json for the determined role type
         role_data = self.rolls_data.get(role_type, {}).get("options", {})
         role_info = role_data.get(reaction.emoji)
 
         if role_info:
             role = discord.utils.get(user.guild.roles, id=role_info["role_id"])
             if role:
+                print(f"Found role {role.name} for emoji {reaction.emoji}")
                 if action == "add":
-                    # Add role to user
                     await user.add_roles(role)
                     # Update economy (add role to user's rolls)
                     if handle_roll_reaction(user.name, role.name):
@@ -141,7 +152,6 @@ class ServerCustomization(commands.Cog):
                                 )
                                 await welcome_channel.send(embed=embed)
                 elif action == "remove":
-                    # Remove role from user
                     await user.remove_roles(role)
                     # Update economy (remove role from user's rolls)
                     if remove_role(user.name, role.name):
@@ -155,6 +165,10 @@ class ServerCustomization(commands.Cog):
                                     color=discord.Color.red()
                                 )
                                 await goodbye_channel.send(embed=embed)
+            else:
+                print("Role not found for ID:", role_info["role_id"])
+        else:
+            print("No role info found for emoji:", reaction.emoji)
 
     def get_role_type_from_emoji(self, emoji):
         # Determine the role type based on the emoji reacted to
