@@ -29,11 +29,10 @@ def load_economy(username):
         if "wordle_streak" not in data:
             data["wordle_streak"] = 0
         if "rolls" not in data:
-            data["rolls"] = []  # Initialize the rolls as an empty list
+            data["rolls"] = []
         if "currency" not in data:
-            data["currency"] = DEFAULT_CURRENCY_GIVE  # Ensure currency is set
+            data["currency"] = DEFAULT_CURRENCY_GIVE
 
-        # Save data if changes were made
         save_economy(username, data)
         return data
     else:
@@ -64,7 +63,7 @@ def add_currency(username, amount=DEFAULT_CURRENCY_GIVE):
 def remove_currency(username, amount=DEFAULT_CURRENCY_TAKE):
     """Remove currency from a user's economy."""
     data = load_economy(username)
-    data["currency"] = max(0, data["currency"] - amount)  # Prevent negative values
+    data["currency"] = max(0, data["currency"] - amount)
     save_economy(username, data)
     return data["currency"]
 
@@ -109,3 +108,10 @@ def has_role(username, role_name):
     """Check if a user already has the specified role."""
     data = load_economy(username)
     return role_name in data["rolls"]
+
+def handle_roll_reaction(username, role_name):
+    """Handle reactions for role management."""
+    if has_role(username, role_name):
+        return remove_role(username, role_name)
+    else:
+        return add_role(username, role_name)
