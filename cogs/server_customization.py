@@ -135,9 +135,6 @@ class ServerCustomization(commands.Cog):
                             welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
                             if welcome_channel:
                                 await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
-                        # Ensure color roles are also applied
-                        if role_type == "color":
-                            await user.edit(color=role.color)
                 elif action == "remove":
                     # Remove role from user
                     await user.remove_roles(role)
