@@ -13,8 +13,12 @@ def replace_placeholders(text, config_vars):
             placeholder = f"{{{var_name}}}"
             # Temporarily add spaces around the placeholder to prevent it from getting merged with adjacent words
             text = text.replace(placeholder, f" {var_value} ")
+
         # Remove any accidental extra spaces caused by the temporary buffer
         text = ' '.join(text.split())
+        # Remove the space after a command prefix (e.g., ! bet -> !bet)
+        text = text.replace(f" {COMMAND_PREFIX}", f"{COMMAND_PREFIX}")
+
     return text
 
 def load_commands_data():
