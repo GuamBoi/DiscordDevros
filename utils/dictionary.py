@@ -11,7 +11,10 @@ def replace_placeholders(text, config_vars):
     if isinstance(text, str):
         for var_name, var_value in config_vars.items():
             placeholder = f"{{{var_name}}}"
-            text = text.replace(placeholder, str(var_value))
+            # Temporarily add spaces around the placeholder to prevent it from getting merged with adjacent words
+            text = text.replace(placeholder, f" {var_value} ")
+        # Remove any accidental extra spaces caused by the temporary buffer
+        text = ' '.join(text.split())
     return text
 
 def load_commands_data():
@@ -32,7 +35,7 @@ def load_commands_data():
         
         # Perform the placeholder replacement
         for cmd in data:
-            for key in ["Description", "LLM_Context"]:
+            for key in ["Description", "LLM_Context", "Example"]:  # Added Example to handle it too
                 if key in cmd and isinstance(cmd[key], str):
                     cmd[key] = replace_placeholders(cmd[key], config_vars)
 
