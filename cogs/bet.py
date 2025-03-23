@@ -19,7 +19,7 @@ class BetCog(commands.Cog):
         data = load_economy(username)
         return data.get('bet_lock', 0) == 0
 
-    async def initiate_bet(self, ctx, amount, user_bet_against):
+    async def initiate_bet(self, ctx, amount, user_bet_against, bet_explanation=None):
         # Check if both users can place bets
         if not await self.can_place_bet(ctx.author.name):
             await ctx.send(f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first.")
@@ -39,11 +39,15 @@ class BetCog(commands.Cog):
         await self.manage_bet_lock(ctx.author.name, 1)
         await self.manage_bet_lock(user_bet_against.name, 1)
 
-        # Create bet challenge embed message with dynamic currency display
+        # Build the bet challenge message
         bet_message = (
             f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n"
             f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
         )
+        if bet_explanation:
+            bet_message += f"\nBet Explanation: {bet_explanation}"
+
+        # Create bet challenge embed message with dynamic currency display
         bet_embed = await create_embed(
             title="Bet Challenge",
             description=bet_message,
@@ -54,27 +58,32 @@ class BetCog(commands.Cog):
         await bet_msg.add_reaction("✅")
         await bet_msg.add_reaction("❌")
 
+        # Save bet data including the optional explanation
         self.active_bets[bet_msg.id] = {
             "stage": "challenge",
             "challenger": ctx.author,
             "opponent": user_bet_against,
             "amount": amount,
             "ctx": ctx,
-            "channel": bet_channel  # Save channel for subsequent messages
+            "channel": bet_channel,  # Save channel for subsequent messages
+            "explanation": bet_explanation
         }
 
-    async def resolve_bet(self, ctx, winner, loser, amount):
+    async def resolve_bet(self, ctx, winner, loser, amount, bet_explanation=None):
         # Award the entire pot (2 * amount) to the winner
         add_currency(winner.name, 2 * amount)
         # Unlock both players
         await self.manage_bet_lock(winner.name, 0)
         await self.manage_bet_lock(loser.name, 0)
+        resolution_description = (
+            f"{winner.mention} wins the bet! {CURRENCY_SYMBOL}{2 * amount} {CURRENCY_NAME} has been transferred to them!\n"
+            f"{loser.mention} lost {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
+        )
+        if bet_explanation:
+            resolution_description += f"\nBet Explanation: {bet_explanation}"
         resolution_embed = await create_embed(
             title="Bet Resolved",
-            description=(
-                f"{winner.mention} wins the bet! {CURRENCY_SYMBOL}{2 * amount} {CURRENCY_NAME} has been transferred to them!\n"
-                f"{loser.mention} lost {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
-            ),
+            description=resolution_description,
             color=discord.Color.red()
         )
         # Send the resolved embed to the BETTING_CHANNEL
@@ -82,12 +91,12 @@ class BetCog(commands.Cog):
         await betting_channel.send(embed=resolution_embed)
 
     @commands.command()
-    async def bet(self, ctx, amount: int, user_bet_against: discord.User):
-        """Place a bet against another user."""
+    async def bet(self, ctx, amount: int, user_bet_against: discord.User, *, bet_explanation: str = None):
+        """Place a bet against another user. Optionally add a bet explanation."""
         if ctx.author == user_bet_against:
             await ctx.send("You can't bet against yourself!")
             return
-        await self.initiate_bet(ctx, amount, user_bet_against)
+        await self.initiate_bet(ctx, amount, user_bet_against, bet_explanation)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -105,6 +114,7 @@ class BetCog(commands.Cog):
                 opponent = bet_data["opponent"]
                 amount = bet_data["amount"]
                 channel = bet_data["channel"]
+                bet_explanation = bet_data.get("explanation")
 
                 # Only process reactions from the opponent
                 if user != opponent:
@@ -112,13 +122,14 @@ class BetCog(commands.Cog):
 
                 if str(reaction.emoji) == "✅":
                     # Opponent accepted: send agreement embed asking for winner vote in the same channel
-                    # Using Unicode regional indicator symbols for letters (e.g. 🇦 for A)
                     challenger_emoji = chr(0x1F1E6 + (ord(challenger.name[0].upper()) - ord('A')))
                     opponent_emoji = chr(0x1F1E6 + (ord(opponent.name[0].upper()) - ord('A')))
                     agreement_message = (
                         f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n"
                         f"React with {challenger_emoji} for **{challenger.name}** or {opponent_emoji} for **{opponent.name}**."
                     )
+                    if bet_explanation:
+                        agreement_message += f"\nBet Explanation: {bet_explanation}"
                     agreement_embed = await create_embed(
                         title="Bet Resolution",
                         description=agreement_message,
@@ -133,7 +144,8 @@ class BetCog(commands.Cog):
                         "amount": amount,
                         "ctx": ctx,
                         "challenger_emoji": challenger_emoji,
-                        "opponent_emoji": opponent_emoji
+                        "opponent_emoji": opponent_emoji,
+                        "explanation": bet_explanation
                     }
                     # Delete the original bet challenge message and remove it from active bets
                     await reaction.message.delete()
@@ -141,12 +153,15 @@ class BetCog(commands.Cog):
 
                 elif str(reaction.emoji) == "❌":
                     # Opponent declined: refund both players and notify with an embed
+                    refund_description = (
+                        f"{opponent.mention} declined the bet against {challenger.mention}. No {CURRENCY_NAME} was exchanged.\n"
+                        f"Both players have been refunded their bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
+                    )
+                    if bet_explanation:
+                        refund_description += f"\nBet Explanation: {bet_explanation}"
                     refund_embed = await create_embed(
                         title="Bet Declined",
-                        description=(
-                            f"{opponent.mention} declined the bet against {challenger.mention}. No {CURRENCY_NAME} was exchanged.\n"
-                            f"Both players have been refunded their bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
-                        ),
+                        description=refund_description,
                         color=discord.Color.red()
                     )
                     await channel.send(embed=refund_embed)
@@ -167,6 +182,7 @@ class BetCog(commands.Cog):
             amount = agreement_data['amount']
             challenger_emoji = agreement_data['challenger_emoji']
             opponent_emoji = agreement_data['opponent_emoji']
+            bet_explanation = agreement_data.get("explanation")
 
             # Only process reactions for the expected emojis
             if str(reaction.emoji) not in [challenger_emoji, opponent_emoji]:
@@ -185,7 +201,7 @@ class BetCog(commands.Cog):
                         else:
                             winner = opponent
                             loser = challenger
-                        await self.resolve_bet(ctx, winner, loser, amount)
+                        await self.resolve_bet(ctx, winner, loser, amount, bet_explanation)
                         del self.agreement_phase[message_id]
                         return
 
