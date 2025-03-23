@@ -226,7 +226,10 @@ DiscordDevros/         # Main Directory
 └── requirements.txt         # Dependencies that need to be installed
 ````
 
+___
+
 #### `cogs/` Command Code Files Explained
+
 ###### `ask.py`
 The `ask` command allows users to ask an AI (via Open WebUI) any question and receive a response in the form of a well-formatted embed. The bot sends the user's question to the AI, processes the response, and sends it back in a clean, readable format. Here's a step-by-step breakdown of how this command works:
 
@@ -270,6 +273,8 @@ The `ask` command allows users to ask an AI (via Open WebUI) any question and re
 
 Overall, the `ask` command provides a seamless way for users to interact with the AI model, ask questions, and receive intelligent, AI-generated responses in a visually appealing format.
 
+___
+
 ###### `command_help.py`
 The `command_help` command allows users to get detailed information about specific bot commands or see a list of all available commands. Here's how it works and how it uses supporting files:
 
@@ -291,6 +296,35 @@ The `command_help` command allows users to get detailed information about specif
 
 Overall, `command_help` provides users with personalized, AI-generated explanations about how to use the bot's commands, using structured data and adaptable response templates.
 
+___
+
+###### `server_customization.py`
+
+The `server_customization.py` file is a cog for the Discord bot that enables server administrators to easily customize and manage role reactions for users. This feature allows users to select roles via reaction emojis on embedded messages that the bot sends to a specific channel. The bot then handles adding and removing roles based on those reactions, making it easy to offer dynamic roles (such as color roles, notification preferences, and channel access) to users.
+
+**Key Features:**
+
+1. **Role-based Reactions:** The bot sends multiple embed messages to a specified channel, each representing a different category of roles (color roles, channel roles, and notification preferences). Users can react to these messages with specific emojis, and the bot will assign or remove the corresponding roles.
+    
+2. **Persistent Role Data:** Role configuration data (such as role names, emojis, and descriptions) is stored in a JSON file (`rolls.json`). This data can be updated without restarting the bot, and it allows for easy addition or removal of roles and emojis.
+    
+3. **Automatic Role Assignment and Removal:** When a user reacts to an embed message, the bot checks which role corresponds to the selected emoji and then assigns that role to the user. Similarly, when a user removes their reaction, the bot removes the corresponding role from the user.
+    
+4. **Customizable Embed Messages:** The embed messages sent by the bot can be customized for each category of roles. The bot will generate a unique embed with a description of the roles and corresponding emojis for each category (color, channels, notifications).
+    
+5. **Persistence Across Restarts:** The `server_customization.py` file ensures that the roles and reactions remain persistent, even when the bot is restarted. This is accomplished by saving the message IDs and reactions in a JSON file (`message_ids.json`) so the bot can re-add the reactions to the correct messages when it starts back up.
+ 
+**How to Use:**
+
+1. **Run the `!server_customization` Command:** When you run the `!server_customization` command, the bot will send three embed messages (one for each category of roles: color, channels, notifications) to the specified channel. Each embed will list the available roles and emojis that users can react to.
+    
+2. **React to Embed Messages:** Users can react to the embed messages with the corresponding emojis to select their roles. Once a user reacts, the bot will automatically assign the corresponding role to them.
+    
+3. **Reacting to Remove Roles:** Users can also remove roles by clicking the corresponding emoji again to remove their reaction, and the bot will remove the assigned role.
+    
+4. **Customizing Roles:** Server admins can customize the roles and emojis by modifying the `rolls.json` file. This file stores all the configuration data for the roles, including the role names, emojis, and descriptions.
+   
+___
 
 #### `data/` Bot Data Files Explained
 ###### `commands.json`
