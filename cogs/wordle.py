@@ -49,7 +49,7 @@ def build_game_description(game_state) -> str:
     description = ""
     for guess in game_state["guesses"]:
         feedback = generate_feedback(game_state["answer"], guess)
-        description += f"Guess: `{guess}` - {feedback}\n"
+        description += f"`{guess}` - {feedback}\n"
     attempts_left = MAX_ATTEMPTS - game_state["attempts"]
     description += f"\nAttempts remaining: **{attempts_left}**"
     return description
