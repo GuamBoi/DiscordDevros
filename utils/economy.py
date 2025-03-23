@@ -22,25 +22,28 @@ def load_economy(username):
     if os.path.exists(user_file):
         with open(user_file, 'r') as f:
             data = json.load(f)
-        # Ensure the bet_lock, wordle_streak, and rolls keys exist; if not, add them with default values
+        
+        # Check and set missing keys
         if "bet_lock" not in data:
             data["bet_lock"] = 0
-            save_economy(username, data)
         if "wordle_streak" not in data:
             data["wordle_streak"] = 0
-            save_economy(username, data)
         if "rolls" not in data:
             data["rolls"] = []  # Initialize the rolls as an empty list
-            save_economy(username, data)
+        if "currency" not in data:
+            data["currency"] = DEFAULT_CURRENCY_GIVE  # Ensure currency is set
+
+        # Save data if changes were made
+        save_economy(username, data)
         return data
     else:
-        # Create a new economy file with default values, including bet_lock set to 0, wordle_streak set to 0, and empty rolls
+        # Create a new economy file with default values
         data = {
             "username": username,
             "currency": DEFAULT_CURRENCY_GIVE,
             "bet_lock": 0,
-            "wordle_streak": 0,  # Initialize the wordle_streak
-            "rolls": []  # Initialize the rolls as an empty list
+            "wordle_streak": 0,
+            "rolls": []
         }
         save_economy(username, data)
         return data
