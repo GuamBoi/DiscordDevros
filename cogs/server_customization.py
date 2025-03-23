@@ -127,7 +127,7 @@ class ServerCustomization(commands.Cog):
                                 embed = await create_embed(
                                     "Role Assigned",
                                     f"Welcome {user.mention}, you have been given the {role.name} role!",
-                                    color=discord.Color.green()
+                                    color=discord.Color.blue()
                                 )
                                 await welcome_channel.send(embed=embed)
                 elif action == "remove":
@@ -139,7 +139,7 @@ class ServerCustomization(commands.Cog):
                                 embed = await create_embed(
                                     "Role Removed",
                                     f"{user.mention} has been removed from the {role.name} role. Goodbye!",
-                                    color=discord.Color.red()
+                                    color=discord.Color.blue()
                                 )
                                 await goodbye_channel.send(embed=embed)
             else:
