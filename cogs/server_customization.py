@@ -22,7 +22,8 @@ class ServerCustomization(commands.Cog):
             with open(self.rolls_file, 'r') as f:
                 return json.load(f)
         else:
-            return {"color_roles": [], "channels_roles": [], "update_channels": []}
+            # Provide default structure if file doesn't exist
+            return {"color": {}, "channels": {}, "notifications": {}}
 
     def save_rolls(self):
         self.ensure_data_folder()
@@ -60,6 +61,7 @@ class ServerCustomization(commands.Cog):
         await ctx.send("Server customization complete!")
 
     async def create_role_embed(self, role_type):
+        # Get the role data from rolls.json for the specified role type
         role_data = self.rolls_data.get(role_type, {})
         if not role_data:
             return await create_embed("No Roles", f"No roles found for '{role_type}'.", color=discord.Color.red())
@@ -67,6 +69,8 @@ class ServerCustomization(commands.Cog):
         message = role_data.get("message", "No message")
         description = role_data.get("description", "No description")
         options = role_data.get("options", {})
+
+        # Build the options string from the available emojis and role names
         options_text = "\n".join([f"{emoji} {role['name']}" for emoji, role in options.items()])
         return await create_embed(
             message,
@@ -75,6 +79,7 @@ class ServerCustomization(commands.Cog):
         )
 
     async def add_reactions(self, message, role_type):
+        # Add reactions to the message based on the options from rolls.json
         options = self.rolls_data.get(role_type, {}).get("options", {})
         for emoji in options.keys():
             await message.add_reaction(emoji)
@@ -83,49 +88,35 @@ class ServerCustomization(commands.Cog):
     async def on_reaction_add(self, reaction, user):
         if user == self.bot.user:
             return
+        # Reload rolls_data to ensure it reflects any manual updates
+        self.rolls_data = self.load_rolls()
         message_id = reaction.message.id
-        if message_id in (self.rolls_data.get("color_roles_message_id"),
-                          self.rolls_data.get("channels_roles_message_id"),
-                          self.rolls_data.get("notifications_roles_message_id")):
+        if message_id == self.rolls_data.get("color_roles_message_id") or \
+           message_id == self.rolls_data.get("channels_roles_message_id") or \
+           message_id == self.rolls_data.get("notifications_roles_message_id"):
             await self.handle_reaction(reaction, user, "add")
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction, user):
         if user == self.bot.user:
             return
-        # If the reaction message is cached, handle it here
+        # Reload rolls_data to ensure it reflects any manual updates
+        self.rolls_data = self.load_rolls()
         message_id = reaction.message.id
-        if message_id in (self.rolls_data.get("color_roles_message_id"),
-                          self.rolls_data.get("channels_roles_message_id"),
-                          self.rolls_data.get("notifications_roles_message_id")):
+        if message_id == self.rolls_data.get("color_roles_message_id") or \
+           message_id == self.rolls_data.get("channels_roles_message_id") or \
+           message_id == self.rolls_data.get("notifications_roles_message_id"):
             await self.handle_reaction(reaction, user, "remove")
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
-        # This handles reactions on uncached messages
-        if payload.user_id == self.bot.user.id:
-            return
-
-        if payload.message_id in (self.rolls_data.get("color_roles_message_id"),
-                                  self.rolls_data.get("channels_roles_message_id"),
-                                  self.rolls_data.get("notifications_roles_message_id")):
-            guild = self.bot.get_guild(payload.guild_id)
-            if not guild:
-                return
-            member = guild.get_member(payload.user_id)
-            if not member:
-                return
-            # For raw events, emoji is available as payload.emoji.name
-            emoji = payload.emoji.name
-            await self.handle_raw_reaction(emoji, member, "remove")
-
     async def handle_reaction(self, reaction, user, action):
+        # Convert reaction emoji to a string for matching
         emoji = reaction.emoji if isinstance(reaction.emoji, str) else reaction.emoji.name
         print(f"Handling reaction {emoji} for user {user} with action {action}")
         role_type = self.get_role_type_from_emoji(emoji)
         if not role_type:
             print("No matching role type found for emoji:", emoji)
             return
+
         role_data = self.rolls_data.get(role_type, {}).get("options", {})
         role_info = role_data.get(emoji)
         if role_info:
@@ -159,34 +150,6 @@ class ServerCustomization(commands.Cog):
                 print("Role not found for ID:", role_info["role_id"])
         else:
             print("No role info found for emoji:", emoji)
-
-    async def handle_raw_reaction(self, emoji, member, action):
-        print(f"Handling raw reaction {emoji} for member {member} with action {action}")
-        role_type = self.get_role_type_from_emoji(emoji)
-        if not role_type:
-            print("No matching role type found for raw emoji:", emoji)
-            return
-        role_data = self.rolls_data.get(role_type, {}).get("options", {})
-        role_info = role_data.get(emoji)
-        if role_info:
-            role = discord.utils.get(member.guild.roles, id=role_info["role_id"])
-            if role:
-                if action == "remove":
-                    await member.remove_roles(role)
-                    if remove_role(member.name, role.name):
-                        if role_type != "color":
-                            goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
-                            if goodbye_channel:
-                                embed = await create_embed(
-                                    "Role Removed",
-                                    f"{member.mention} has been removed from the {role.name} role. Goodbye!",
-                                    color=discord.Color.red()
-                                )
-                                await goodbye_channel.send(embed=embed)
-            else:
-                print("Role not found for raw reaction, ID:", role_info["role_id"])
-        else:
-            print("No role info found for raw emoji:", emoji)
 
     def get_role_type_from_emoji(self, emoji):
         if emoji in self.rolls_data.get("color", {}).get("options", {}):
