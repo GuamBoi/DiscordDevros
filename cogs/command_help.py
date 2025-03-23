@@ -3,15 +3,8 @@ from discord.ext import commands
 from utils.llm_api import query_llm, query_llm_with_command_info
 from utils.embed import create_embed  # Import the embed function
 from config import COMMAND_PREFIX
+from utils.dictionary import get_command_info, load_commands_data  # Import functions from dictionary.py
 import json
-import os
-
-# Load the commands from the commands.json file
-def load_commands():
-    with open('data/commands.json', 'r') as f:
-        return {cmd['Command_Name'].lower(): cmd for cmd in json.load(f)}
-
-commands_list = load_commands()  # Changed to dictionary
 
 class CommandHelp(commands.Cog):
     def __init__(self, bot):
@@ -24,8 +17,8 @@ class CommandHelp(commands.Cog):
         if no command name is given.
         """
         if command_name:
-            # If a command name is provided, give detailed help for that command
-            command_info = commands_list.get(command_name.lower())
+            # Retrieve detailed info for the specific command
+            command_info = get_command_info(command_name)
 
             if command_info:
                 # Prepare command info and send it to the LLM for further processing
@@ -37,14 +30,19 @@ class CommandHelp(commands.Cog):
             else:
                 await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}command_help` for a list of commands.")
         else:
-            # If no command name is provided, list all available commands in a blue embed
+            # No command name provided, list all available commands in a blue embed
+            commands_data = load_commands_data()
+            if not commands_data:
+                await ctx.send("Failed to load commands.")
+                return
+            
             help_message = ""
-            for command in commands_list:
-                command_info = commands_list[command]
-                description = command_info.get("Description", "No description available.")
-                example = command_info.get("Example", "No example available.")
+            for command in commands_data:
+                command_name = command.get("Command_Name", "")
+                description = command.get("Description", "No description available.")
+                example = command.get("Example", "No example available.")
                 
-                help_message += f"**{COMMAND_PREFIX}{command}**\n"
+                help_message += f"**{COMMAND_PREFIX}{command_name}**\n"
                 help_message += f"**Description**: {description}\n"
                 help_message += f"**Example**: {example}\n\n"
 
