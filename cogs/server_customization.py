@@ -44,14 +44,20 @@ class ServerCustomization(commands.Cog):
         notifications_embed = await self.create_role_embed("notifications")
 
         # Send each embed only once
-        await rolls_channel.send(embed=color_embed)
-        await rolls_channel.send(embed=channels_embed)
-        await rolls_channel.send(embed=notifications_embed)
+        color_message = await rolls_channel.send(embed=color_embed)
+        channels_message = await rolls_channel.send(embed=channels_embed)
+        notifications_message = await rolls_channel.send(embed=notifications_embed)
+
+        # Save the message IDs to rolls.json so the bot can track them
+        self.rolls_data["color_roles_message_id"] = color_message.id
+        self.rolls_data["channels_roles_message_id"] = channels_message.id
+        self.rolls_data["notifications_roles_message_id"] = notifications_message.id
+        self.save_rolls()
 
         # Add reactions based on the emojis in the rolls.json file
-        await self.add_reactions(color_embed, "color")
-        await self.add_reactions(channels_embed, "channels")
-        await self.add_reactions(notifications_embed, "notifications")
+        await self.add_reactions(color_message, "color")
+        await self.add_reactions(channels_message, "channels")
+        await self.add_reactions(notifications_message, "notifications")
 
     async def create_role_embed(self, role_type):
         # Get the role data from rolls.json
@@ -87,29 +93,12 @@ class ServerCustomization(commands.Cog):
         if user == self.bot.user:
             return
 
-        role_type = self.get_role_type_from_emoji(reaction.emoji)
-        if not role_type:
-            return
-
-        # Get role info from rolls.json
-        role_data = self.rolls_data.get(role_type, {}).get("options", {})
-        role_info = role_data.get(reaction.emoji)
-
-        if role_info:
-            role = discord.utils.get(user.guild.roles, id=role_info["role_id"])
-            if role:
-                # Add role to user
-                await user.add_roles(role)
-                # Update economy (add role to user's rolls)
-                if handle_roll_reaction(user.name, role.name):
-                    # Send a welcome message if it's not a color role
-                    if role_type != "color":
-                        welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
-                        if welcome_channel:
-                            await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
-                    # Ensure color roles are also applied
-                    if role_type == "color":
-                        await user.edit(color=role.color)
+        # Check if the reaction is on one of the saved messages
+        message_id = reaction.message.id
+        if message_id == self.rolls_data.get("color_roles_message_id") or \
+           message_id == self.rolls_data.get("channels_roles_message_id") or \
+           message_id == self.rolls_data.get("notifications_roles_message_id"):
+            await self.handle_reaction(reaction, user, "add")
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction, user):
@@ -117,6 +106,14 @@ class ServerCustomization(commands.Cog):
         if user == self.bot.user:
             return
 
+        # Check if the reaction is on one of the saved messages
+        message_id = reaction.message.id
+        if message_id == self.rolls_data.get("color_roles_message_id") or \
+           message_id == self.rolls_data.get("channels_roles_message_id") or \
+           message_id == self.rolls_data.get("notifications_roles_message_id"):
+            await self.handle_reaction(reaction, user, "remove")
+
+    async def handle_reaction(self, reaction, user, action):
         role_type = self.get_role_type_from_emoji(reaction.emoji)
         if not role_type:
             return
@@ -128,15 +125,29 @@ class ServerCustomization(commands.Cog):
         if role_info:
             role = discord.utils.get(user.guild.roles, id=role_info["role_id"])
             if role:
-                # Remove role from user
-                await user.remove_roles(role)
-                # Update economy (remove role from user's rolls)
-                if remove_role(user.name, role.name):
-                    # Send a goodbye message if it's not a color role
-                    if role_type != "color":
-                        goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
-                        if goodbye_channel:
-                            await goodbye_channel.send(f"{user.mention} has been removed from the {role.name} role. Goodbye!")
+                if action == "add":
+                    # Add role to user
+                    await user.add_roles(role)
+                    # Update economy (add role to user's rolls)
+                    if handle_roll_reaction(user.name, role.name):
+                        # Send a welcome message if it's not a color role
+                        if role_type != "color":
+                            welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
+                            if welcome_channel:
+                                await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
+                        # Ensure color roles are also applied
+                        if role_type == "color":
+                            await user.edit(color=role.color)
+                elif action == "remove":
+                    # Remove role from user
+                    await user.remove_roles(role)
+                    # Update economy (remove role from user's rolls)
+                    if remove_role(user.name, role.name):
+                        # Send a goodbye message if it's not a color role
+                        if role_type != "color":
+                            goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
+                            if goodbye_channel:
+                                await goodbye_channel.send(f"{user.mention} has been removed from the {role.name} role. Goodbye!")
 
     def get_role_type_from_emoji(self, emoji):
         # Determine the role type based on the emoji reacted to
