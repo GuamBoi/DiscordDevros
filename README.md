@@ -86,7 +86,7 @@ ROLLS_CHANNEL = BETTING_CHANNEL_ID          # Set Roll Selection Channel ID
 ```
 
 ### 5. Update the `rolls.json` File to Match Your Server
-```
+```json
 {
     "color": {
         "message": "Server Color Selection",
