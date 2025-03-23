@@ -9,16 +9,16 @@ COMMANDS_JSON_PATH = os.path.join("data", "commands.json")
 def replace_placeholders(text, config_vars):
     """Helper function to replace placeholders in text using provided config variables."""
     if isinstance(text, str):
+        # Replace each placeholder with a buffered value
         for var_name, var_value in config_vars.items():
             placeholder = f"{{{var_name}}}"
-            # Temporarily add spaces around the placeholder to prevent it from getting merged with adjacent words
             text = text.replace(placeholder, f" {var_value} ")
-
-        # Remove any accidental extra spaces caused by the temporary buffer
+        # Normalize spaces
         text = ' '.join(text.split())
-        # Remove the space after a command prefix (e.g., ! bet -> !bet)
-        text = text.replace(f" {COMMAND_PREFIX}", f"{COMMAND_PREFIX}")
-
+        # Remove extra space after the command prefix, e.g. "! bet" -> "!bet"
+        text = text.replace(f"{COMMAND_PREFIX} ", f"{COMMAND_PREFIX}")
+        # Remove extra space after an @, e.g. "@ Devros" -> "@Devros"
+        text = text.replace("@ ", "@")
     return text
 
 def load_commands_data():
@@ -37,9 +37,9 @@ def load_commands_data():
             ]
         }
         
-        # Perform the placeholder replacement
+        # Perform the placeholder replacement on relevant fields
         for cmd in data:
-            for key in ["Description", "LLM_Context", "Example"]:  # Added Example to handle it too
+            for key in ["Description", "LLM_Context", "Example"]:
                 if key in cmd and isinstance(cmd[key], str):
                     cmd[key] = replace_placeholders(cmd[key], config_vars)
 
