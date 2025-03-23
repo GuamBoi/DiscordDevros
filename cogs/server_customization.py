@@ -4,7 +4,7 @@ import json
 import os
 from utils.embed import create_embed
 import config
-from economy import handle_roll_reaction, load_economy, add_role, remove_role, get_balance  # Import economy functions
+from utils.economy import handle_roll_reaction, load_economy, add_role, remove_role, get_balance
 
 class ServerCustomization(commands.Cog):
     def __init__(self, bot):
