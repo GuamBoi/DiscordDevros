@@ -228,9 +228,9 @@ DiscordDevros/         # Main Directory
 
 ___
 
-#### `cogs/` Command Code Files Explained
+#### **cogs/** Command Code Files Explained
 
-###### `ask.py`
+###### **ask.py**
 The `ask` command allows users to ask an AI (via Open WebUI) any question and receive a response in the form of a well-formatted embed. The bot sends the user's question to the AI, processes the response, and sends it back in a clean, readable format. Here's a step-by-step breakdown of how this command works:
 
 1. **User Interaction**:  
@@ -275,7 +275,7 @@ Overall, the `ask` command provides a seamless way for users to interact with th
 
 ___
 
-###### `command_help.py`
+###### **command_help.py**
 The `command_help` command allows users to get detailed information about specific bot commands or see a list of all available commands. Here's how it works and how it uses supporting files:
 
 1. **User Interaction**:  
@@ -298,7 +298,7 @@ Overall, `command_help` provides users with personalized, AI-generated explanati
 
 ___
 
-###### `server_customization.py`
+###### **server_customization.py**
 
 The `server_customization.py` file is a cog for the Discord bot that enables server administrators to easily customize and manage role reactions for users. This feature allows users to select roles via reaction emojis on embedded messages that the bot sends to a specific channel. The bot then handles adding and removing roles based on those reactions, making it easy to offer dynamic roles (such as color roles, notification preferences, and channel access) to users.
 
@@ -326,11 +326,11 @@ The `server_customization.py` file is a cog for the Discord bot that enables ser
    
 ___
 
-#### `data/` Bot Data Files Explained
-###### `commands.json`
-###### `prompts.json` 
-#### `utils/` Utility Functions Explained Explained
-###### `llm_api.py`
+#### **data/** Bot Data Files Explained
+###### **commands.json**
+###### **prompts.json** 
+#### **utils/** Utility Functions Explained Explained
+###### **llm_api.py**
 
 The `llm_api.py` file contains functions to interact with Open WebUI’s API, facilitating communication between the bot and the AI model. There are three main functions in this file:
 
@@ -378,7 +378,7 @@ These three functions together enable the bot to dynamically query the AI model,
 
 ___
 
-###### `economy.py` - Economy System Logic
+###### **economy.py**
 
 The `economy.py` file contains the logic for managing the economy system within your Discord server, including handling user balances, transactions, and server-wide economic features like currency and leaderboards. This file interacts with the configuration defined in `config.py` to manage the server's economy and allows for easy customization.
 
@@ -392,7 +392,6 @@ The `economy.py` file contains the logic for managing the economy system within 
     
 - **Economy Transactions**:  
     Users can earn or spend currency through bot commands, such as `bet.py`. These transactions are reflected in the user's balance and saved incase the bot crashes.
-    
 
 **Configuration:**
 
