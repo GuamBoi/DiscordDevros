@@ -38,7 +38,7 @@ class CommandHelp(commands.Cog):
             
             help_message = ""
             for command in commands_data:
-                command_name = command.get("Command_Name", "")
+                command_name = command.get("Command_Name", "Unknown Command")
                 description = command.get("Description", "No description available.")
                 example = command.get("Example", "No example available.")
                 
