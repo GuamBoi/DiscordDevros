@@ -79,7 +79,7 @@
     },
     {
         "Command_Name": "guess",
-        "Description": "Adds a guess to your wordle game. (Can only be used after `{COMMAND_PREFIX}wordle `",
+        "Description": "Adds a guess to your wordle game. (Can only be used after `{COMMAND_PREFIX}wordle `)",
         "Example": "{COMMAND_PREFIX}guess YOUR_GUESS_HERE",
         "LLM_Context": "The `guess` command can be used AFTER a member uses the {COMMAND_PREFIX}wordle command to guess their word in 6 guesses or less. This means members can use the `{COMMAND_PREFIX}guess` command 6 times before they will have to use the `{COMMAND_PREFIX}wordle` command again to continue guessing."
     }
