@@ -39,13 +39,11 @@ class BetCog(commands.Cog):
         await self.manage_bet_lock(ctx.author.name, 1)
         await self.manage_bet_lock(user_bet_against.name, 1)
 
-        # Build the bet challenge message
-        bet_message = (
-            f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n"
-            f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
-        )
+        # Build the bet challenge message with formatting
+        bet_message = f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n\n"
         if bet_explanation:
-            bet_message += f"\nBet Explanation: {bet_explanation}"
+            bet_message += f"Bet Explanation: \n{bet_explanation}\n\n"
+        bet_message += f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
 
         # Create bet challenge embed message with dynamic currency display
         bet_embed = await create_embed(
@@ -80,7 +78,7 @@ class BetCog(commands.Cog):
             f"{loser.mention} lost {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
         )
         if bet_explanation:
-            resolution_description += f"\nBet Explanation: {bet_explanation}"
+            resolution_description += f"\n\nBet Explanation: \n{bet_explanation}"
         resolution_embed = await create_embed(
             title="Bet Resolved",
             description=resolution_description,
@@ -124,12 +122,12 @@ class BetCog(commands.Cog):
                     # Opponent accepted: send agreement embed asking for winner vote in the same channel
                     challenger_emoji = chr(0x1F1E6 + (ord(challenger.name[0].upper()) - ord('A')))
                     opponent_emoji = chr(0x1F1E6 + (ord(opponent.name[0].upper()) - ord('A')))
-                    agreement_message = (
-                        f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n"
+                    agreement_message = f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n\n"
+                    if bet_explanation:
+                        agreement_message += f"Bet Explanation: \n{bet_explanation}\n\n"
+                    agreement_message += (
                         f"React with {challenger_emoji} for **{challenger.name}** or {opponent_emoji} for **{opponent.name}**."
                     )
-                    if bet_explanation:
-                        agreement_message += f"\nBet Explanation: {bet_explanation}"
                     agreement_embed = await create_embed(
                         title="Bet Resolution",
                         description=agreement_message,
@@ -158,7 +156,7 @@ class BetCog(commands.Cog):
                         f"Both players have been refunded their bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}."
                     )
                     if bet_explanation:
-                        refund_description += f"\nBet Explanation: {bet_explanation}"
+                        refund_description += f"\n\nBet Explanation: \n{bet_explanation}"
                     refund_embed = await create_embed(
                         title="Bet Declined",
                         description=refund_description,
