@@ -17,7 +17,7 @@ class CommandHelp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="command_help", aliases=["h", "commands"])
+    @commands.command(name="command_help", aliases=["commands"])  # Keep "commands", remove "h"
     async def command_help(self, ctx, *, command_name=None):
         """
         This command provides help for a specific command (via DM) or lists all available commands
@@ -37,12 +37,26 @@ class CommandHelp(commands.Cog):
             else:
                 await ctx.send(f"Command '{command_name}' not found. Use `{COMMAND_PREFIX}command_help` for a list of commands.")
         else:
-            # If no command name is provided, list all available commands
-            help_message = "Here are the available commands:\n"
+            # If no command name is provided, list all available commands in a blue embed
+            help_message = ""
             for command in commands_list:
-                help_message += f" - `{COMMAND_PREFIX}{command}`\n"
-            help_message += f"Use `{COMMAND_PREFIX}command_help <command_name>` for more information on a specific command."
-            await ctx.send(help_message)
+                command_info = commands_list[command]
+                description = command_info.get("Description", "No description available.")
+                example = command_info.get("Example", "No example available.")
+                
+                help_message += f"**{COMMAND_PREFIX}{command}**\n"
+                help_message += f"**Description**: {description}\n"
+                help_message += f"**Example**: {example}\n\n"
+
+            # Create the embed with all commands
+            embed = await create_embed(
+                title="Command List",
+                description=help_message,
+                color=discord.Color.blue()  # Embed color set to blue
+            )
+
+            # Send the embed to the user
+            await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):
