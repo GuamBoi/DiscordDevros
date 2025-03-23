@@ -2,118 +2,136 @@
 
 DiscordDevros is a Discord bot interconnected with an Open WebUI server to generate unique and more natural language responses. The code is structured in a modular format to allow for easy customization based on the needs of your server. The `cogs` folder contains the code for all commands available on the server. Each script is either an individual command, or a group of commands that function together to create a game or other feature. 
 
-## Bot File Structure
-```
-DiscordDevros/         # Main Directory
-│
-├── cogs/                 # Folder for command files
-│   ├── __init__.py          # Makes the cogs folder a package
-│   ├── ask.py               # Ask your Pi LLM a question (Ai)
-│   ├── bet.py               # Handles bets between 2 server members
-│   ├── command_help.py      # Starts a chat to help users with commands (Ai)
-│   ├── dice.py              # Allows users to roll diffrent DND dice
-│   ├── invite.py            # Sends a game invite to the game being played
-│   ├── leaderboard.py       # Allows Users to check the economy leaderboard
-│   └── wordle.py            # Commands for starting / guessing in wordle (Ai)
-│
-├── data/                 # Folder for storing 
-│   └── commands.json        # File for storing command descriptions
-│
-├── utils/                # Folder for utility script files
-│   ├── __init__.py          # Makes the utils folder a package
-│   ├── dictionary.py        # Loads and formats command information
-│   ├── economy.py           # Handls the economy logic
-│   ├── embed.py             # Handles the embed format for bot messages
-│   └── llm_api.py           # Handles connection with Open WebUI's API
-│
-├── .env                     # Stores bot token, prefix, and API info
-├── .gitignore               # Ignores sensitive files when cloned
-├── README.md                # Code documentation (This File)
-├── bot.py                   # Main bot file (loads commands dynamically)
-├── config.py                # Cofiguration file for bot settings
-└── requirements.txt         # Dependencies that need to be installed
-```
-
-## Features
-- Uses cogs for modular command handling (add or remove scripts from the `cogs/` folder to customize the bot)
-- Loads bot token and prefix from a `.env` file for security. (Sensitive info in this file is loaded into the `config.py` file)
-- The `utils/` folder contains utility scripts. 
-	- The `llm_api.py` file is used to easily integrate the Open WebUI API into any script with the `(Ai)` tag in the folder structure above.
-
 ## Installation
 
 ### 1. Clone the Repository
+
 ```sh
-git clone https://github.com/GuamBoi/DiscordDevros.git
+git clone git@github.com:GuamBoi/DiscordDevros.git
 cd DiscordDevros
 ```
 
 ### 2. Set Up a Virtual Environment
+
 Create a virtual environment to isolate the bot's dependencies:
+
 ```sh
 python3 -m venv venv
 source venv/bin/activate
 ```
 
 ### 3. Install Dependencies
+
 Once the virtual environment is activated, install the required Python dependencies:
+
 ```sh
 pip install -r requirements.txt
 ```
 
 ### 4. Setup Environment Variables and `config.py` file Variables
+
 1. Create a `.env` file in the root directory and add your bot token and command prefix:
-    ```bash
-    nano .env
-    ```
 
-    ```
-    DISCORD_BOT_TOKEN=YOUR_DISCORD_BOTTOKEN
-    OPENWEBUI_API_URL=http://YOUR_PI_IP:PORT/api/chat/completions      # Change `YOUR_PI_IP` with the IP address of the raspberry Pi running your Open WebUI Server, and `PORT` with the port its running on.
-    OPENWEBUI_API_KEY=YOUR_OPEN_WEBUI_API_KEY
-    ```
-
-2. Edit the `config.py` file to configure the bot to your server and liking:
-    ```bash
-    nano config.py
-    ```
-
-    ```python
-    import os
-    from dotenv import load_dotenv
-
-    # Load environment variables from .env file.
-    load_dotenv()
-
-    # Sensitive settings (Change these in the .env file only)
-    DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")     # Pulled from your .env file
-    OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")     # Pulled from your .env file
-    OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")     # Pulled from your .env file
-
-    # Non-sensitive settings (Additional bot settings that are okay to share)
-    COMMAND_PREFIX = "!"           # Change this value if you want a different prefix.
-    MODEL_NAME = "YOUR_MODEL_NAME"     # Set your model name here.
-
-    # Channel Specifications (Defined directly in config.py, not from .env)
-    WORDLE_CHANNEL = YOUR_WORDLE_CHANNEL_ID                # Set your Wordle Game Channel
-    ```
-
-### 5. Run the Bot
-After setting up the environment, run the bot:
-```sh
-python bot.py
+```bash
+nano .env
 ```
 
-### 5. Run the Bot
+```
+DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
+OPENWEBUI_API_URL=http://RASPBERRY_PI_IP:PORT/api/chat/completions
+OPENWEBUI_API_KEY=YOUR_OPENWEBUI_API_KEY
+```
+
+2. Edit the `config.py` file to configure the bot to your server and liking:
+
+```bash
+nano config.py
+```
+
+```python
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file.
+load_dotenv()
+
+# Sensitive settings (Change these in the .env file only)
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")     # Pulled from .env file
+OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")     # Pulled from .env file
+OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")     # Pulled from .env file
+
+# Non-sensitive settings (Additional bot settings that are okay to share)
+BOT_NAME = "YOUR_BOTS_NAME"          # The name of your bot
+BOT_VERSION = "YOUR_VERSION_NUMBER"  # The version of your bot
+COMMAND_PREFIX = "YOUR_PREFIX"       # Change value if you want different prefix.
+MODEL_NAME = "YOUR_LLM_MODEL_NAME"   # Set your model name here.
+
+# Server Economy Settings
+ECONOMY_FOLDER = "eco"               # Folder where economy files are saved
+CURRENCY_NAME = "CURRENCY_NAME"      # Name of your server's currency
+CURRENCY_SYMBOL = "CURRENCY_SYMBOL"  # Symbol of your server's currency
+DEFAULT_CURRENCY_GIVE = NUMBER_HERE          # Default value adding currency
+DEFAULT_CURRENCY_TAKE = NUMBER_HERE          # Default value adding currency
+GAME_WIN = NUMBER_HERE                       # Game win currency value
+GAME_LOSE = NUMBER_HERE                      # Game lost currency value
+
+# Channel Specifications (Defined directly in config.py, not from .env)
+WORDLE_CHANNEL = WORDLE_CHANNEL_ID         # Set your Wordle Game Channel
+INVITE_CHANNEL = INVITE_CHANNEL_ID         # Set your Game Invite Channel ID
+WELCOME_CHANNEL = WELCOME_CHANNEL_ID        # Set your Welcome Channel ID
+GOODBYE_CHANNEL = GOODBYE_CHANNEL_ID        # Set your Goodbye Channel ID
+BETTING_CHANNEL = BETTING_CHANNEL_ID        # Set your Betting Channel ID
+HELP_COMMAND_CHANNEL_CATEGORY = HELP_COMMAND_CATEGORY_ID
+ROLLS_CHANNEL = BETTING_CHANNEL_ID          # Set Roll Selection Channel ID
+```
+
+### 5. Update the `rolls.json` File to Match Your Server
+```
+{
+    "color": {
+        "message": "Server Color Selection",
+        "description": "Color Key:",
+        "note": "Pick 1 color at a time.",
+        "options": {
+            "YOUR_ROLL_EMOJI": {"name": "`YOUR_ROLL_NAME`", "role_id": YOUR_ROLL_ID},
+            "YOUR_ROLL_EMOJI": {"name": "`YOUR_ROLL_NAME`", "role_id": YOUR_ROLL_ID},
+        }
+    },
+    "game": {
+        "message": "Game Selection",
+        "description": "Server Game Options:",
+        "note": "Select all the games you want to be a part of!",
+        "options": {
+            "YOUR_ROLL_EMOJI": {"name": "`YOUR_ROLL_NAME`", "role_id": YOUR_ROLL_ID},
+            "YOUR_ROLL_EMOJI": {"name": "`YOUR_ROLL_NAME`", "role_id": YOUR_ROLL_ID},
+        }
+    },
+    "free_game": {
+        "message": "Free Game and Update Channels",
+        "description": "Channel Options:",
+        "note": "Game update channel selection.",
+        "options": {
+            "YOUR_ROLL_EMOJI": {"name": "`YOUR_ROLL_NAME`", "role_id": YOUR_ROLL_ID},
+            "YOUR_ROLL_EMOJI": {"name": "`YOUR_ROLL_NAME`", "role_id": YOUR_ROLL_ID}
+        }
+    }
+}
+```
+
+### 6. Run the Bot
+
 After setting up the environment, run the bot:
+
 ```sh
 python bot.py
 ```
 
 ## Adding Commands
+
 To add a new command, create a `.py` file in the `cogs/` folder and follow this structure:
 
 #### Example Command
+
 ```python
 from discord.ext import commands
 
@@ -130,6 +148,7 @@ async def setup(bot):
 ```
 
 #### Example command to ping the Open WebUI Server with a prompt
+
 ```python
 from discord.ext import commands
 from utils.llm_api import query_llm  # Import the query_llm function
@@ -139,7 +158,7 @@ class Example(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def hello(self, ctx, *, prompt: str = "Say Hello to the server and introduce yourself"):
+    async def hello(self, ctx, *, prompt: str = "Say Hello to the server and inttroduce yourself"):
         """Command to ask the LLM with a customizable prompt."""
         try:
             # Ask the LLM with the user-defined prompt or default if not provided
@@ -152,8 +171,208 @@ async def setup(bot):
     await bot.add_cog(Example(bot))
 ```
 
+#### Adding Commands to the `commands.json` file
+
+```json
+    {
+        "Command_Name": "",
+        "Description": "",
+        "Example": "",
+        "LLM_Context": ""
+    }
+```
+
 ## Removing the Bot
+
 ```bash
 sudo chown -R $USER:$USER ~/DiscordDevros
 rm -rf ~/DiscordDevros
 ```
+
+## File Structure
+
+```markdown
+DiscordDevros/         # Main Directory
+│
+├── cogs/                 # Folder for command files
+│   ├── __init__.py          # Makes the cogs folder a package
+│   ├── ask.py               # Ask your Pi LLM a question (Ai)
+│   ├── bet.py               # Handles bets between 2 server members
+│   ├── command_help.py      # Starts a chat to help users with commands (Ai)
+│   ├── dice.py              # Allows users to roll diffrent DND dice
+│   ├── invite.py            # Sends a game invite to the game being played
+│   ├── leaderboard.py       # Allows Users to check the economy leaderboard
+│   ├── server_customization.py  
+│   └── wordle.py            # Commands for starting / guessing in wordle (Ai)
+│
+├── data/                 # Folder for storing 
+│   ├── commands.json        # File for storing command descriptions
+│   ├── prompts.json         # File for configuring Ai Message
+│   ├── rolls.json           # File for configuring server rolls
+│   └── wordle_words.txt     # File that lists backup wordle words
+│
+├── utils/                # Folder for utility script function files
+│   ├── __init__.py          # Makes the utils folder a package
+│   ├── dictionary.py        # Loads and formats command information
+│   ├── economy.py           # Handls the economy logic
+│   ├── embed.py             # Handles the embed format for bot messages
+│   └── llm_api.py           # Handles connection with Open WebUI's API
+│
+├── .env                     # Stores bot token, prefix, and API info
+├── .gitignore               # Ignores sensitive files when cloned
+├── README.md                # Code documentation (This File)
+├── bot.py                   # Main bot file (loads commands dynamically)
+├── config.py                # Cofiguration file for bot settings
+└── requirements.txt         # Dependencies that need to be installed
+````
+
+#### `cogs/` Command Code Files Explained
+###### `ask.py`
+The `ask` command allows users to ask an AI (via Open WebUI) any question and receive a response in the form of a well-formatted embed. The bot sends the user's question to the AI, processes the response, and sends it back in a clean, readable format. Here's a step-by-step breakdown of how this command works:
+
+1. **User Interaction**:  
+    When a user types `!ask <question>`, the command is triggered. The user’s question is passed as the `question` argument to the bot.
+    
+2. **Handling the Question**:  
+    The question is passed to the `query_llm` function in the `llm_api.py` file. This function is responsible for interacting with the Open WebUI API and sending the question to the AI model. It also ensures that the typing indicator appears while the model is processing the request.
+    
+    - **Typing Indicator**: The `ctx` (context) is passed to `query_llm` to show the typing indicator while the AI processes the question. This helps indicate to the user that the bot is working on generating a response.
+	
+3. **Generating the Response**:  
+    Once the AI generates a response, the `query_llm` function returns the result as a string. This response is then formatted into an embed using the `create_embed` function, which is defined in `embed.py`. The embed contains:
+    
+    - **Title**: `"Response:"`
+    - **Description**: The AI’s generated response.
+    - **Footer**: `"Message generated by AI"`, indicating the source of the response.
+	
+4. **Sending the Response**:  
+    After creating the embed, the bot sends the formatted response back to the Discord channel using `ctx.send(embed=embed)`. The embed is sent without pinging the original user, keeping the message clean and professional.
+    
+5. **Error Handling**:  
+    If an error occurs at any point (such as a failure to connect to the Open WebUI server or an issue with formatting), the bot catches the exception. The bot then generates an error embed to inform the user. The error embed is formatted similarly to the response embed but has the following differences:
+    
+    - **Title**: `"❌ Error"`
+    - **Description**: The error message, which is provided by the exception (`{e}`).
+    - **Color**: The embed has a red color to signify that an error occurred.
+    - **Footer**: `"Message generated by AI"` to maintain consistency.
+    
+    The error embed is sent back to the channel, ensuring the user is informed about the issue.
+    
+6. **`create_embed`**:  
+    The `create_embed` function is an asynchronous function defined in `embed.py`. It is responsible for constructing the embed with the appropriate title, description, footer, and any optional formatting such as color.
+    
+7. **Cog Structure**:  
+    The `ask` command is part of the `AskLLMCog` class, which is a cog that encapsulates the functionality related to asking the AI model. The cog is added to the bot through the `setup` function, which is required to be asynchronous in order to properly load the cog.
+    
+8. **Result**:  
+    Once the AI response is generated and formatted into an embed, the bot sends the embed to the Discord channel, providing a clean response to the user's question. If an error occurs, the bot sends an error embed to notify the user of the issue.
+    
+
+Overall, the `ask` command provides a seamless way for users to interact with the AI model, ask questions, and receive intelligent, AI-generated responses in a visually appealing format.
+
+###### `command_help.py`
+The `command_help` command allows users to get detailed information about specific bot commands or see a list of all available commands. Here's how it works and how it uses supporting files:
+
+1. **User Interaction**:  
+    When a user types `!command_help <command_name>`, the bot checks if the given command exists in the `commands.json` file. If no command name is provided, it lists all available commands.
+    
+2. **commands.json**:  
+    This file contains structured data for each command, including its name, description, example usage, and context for the AI. The bot uses this data to retrieve relevant information about the command specified by the user.
+    
+3. **prompts.json**:  
+    This file contains templates for how the bot should frame its responses when providing detailed information. It includes placeholders like `{Command_Name}`, `{Example}`, and `{USER_QUESTION}`. The `query_llm_with_command_info` function reads the appropriate template and replaces these placeholders with actual values from `commands.json`.
+    
+4. **llm_api.py**:  
+    After the prompt is generated using the data from `commands.json` and `prompts.json`, the `query_llm_with_command_info` function sends the formatted prompt to the AI server using the `query_llm` function. The AI then generates a response, which is sent back to the user in a private chat.
+    
+5. **Result**:  
+    If the AI server responds successfully, the bot sends the detailed explanation to the user. If there’s an error (e.g., command not found or server issue), an appropriate error message is returned.
+    
+
+Overall, `command_help` provides users with personalized, AI-generated explanations about how to use the bot's commands, using structured data and adaptable response templates.
+
+
+#### `data/` Bot Data Files Explained
+###### `commands.json`
+###### `prompts.json` 
+#### `utils/` Utility Functions Explained Explained
+###### `llm_api.py`
+
+The `llm_api.py` file contains functions to interact with Open WebUI’s API, facilitating communication between the bot and the AI model. There are three main functions in this file:
+
+1. **`query_llm(ctx, prompt: str, private_channel=None)`**  
+    This function sends a query (in the form of a prompt) to the Open WebUI API, processes the response, and returns the AI-generated output. It also manages the typing indicator while waiting for the response.
+    
+    **Steps**:
+    
+    - The `prompt` parameter contains the question or command that the user sends to the AI.
+    - The `ctx` parameter represents the context for the interaction (such as a Discord context), and it’s used to display typing indicators to inform the user that the bot is processing their request.
+    - The `private_channel` parameter is optional and allows showing typing activity in a private channel.
+    - The function constructs a POST request with the `prompt`, API key, and necessary headers to communicate with the Open WebUI API.
+    - The response from the API is parsed, and the AI-generated message is extracted from the response JSON.
+    - The result is returned to the caller, typically to be sent back to the user in a Discord message.
+    
+    This function ensures that the bot can send prompts to the AI and return relevant responses dynamically to the user.
+
+2. **`query_llm_with_command_info(command_info, user_question, ctx, private_channel=None)`**  
+    This function processes command-specific context and user input, constructs a prompt using data from the `commands.json` file, and sends it to the Open WebUI API. It’s primarily used for generating help responses or detailed instructions for specific commands.
+    
+    **Steps**:
+    
+    - The `command_info` parameter contains the command-related data (e.g., name, description, example usage) that is fetched from the `commands.json` file.
+    - The `user_question` parameter is the specific question or additional context the user provides.
+    - The function extracts relevant command details (context, example, and description) from `command_info`.
+    - It then loads the appropriate prompt template from `prompts.json`, replacing placeholders with the actual command details and the user's question.
+    - This formatted prompt is sent to the Open WebUI API for processing.
+    - The AI processes the prompt and returns a tailored response, which is sent back to the user.
+
+    This function is designed to handle requests for command-specific help, dynamically generating detailed responses based on the data for each command.
+
+3. **`query_llm_with_prompt(prompt_name, ctx, private_channel=None)`**  
+    This function loads a predefined prompt by name from the `prompts.json` file, formats it, and sends it to the Open WebUI API to get a response based on the specified prompt template.
+    
+    **Steps**:
+    
+    - The `prompt_name` parameter specifies the name of the prompt template to be used, which is loaded from the `prompts.json` file.
+    - The function fetches the corresponding prompt template and formats it, if necessary, with additional dynamic content (like user input or context).
+    - This formatted prompt is then sent to the Open WebUI API to generate a response.
+    - The AI’s output is returned to the caller, often for further processing or direct delivery to the user.
+
+    This function allows for easy querying of predefined prompts that are stored in `prompts.json`, providing flexibility in how the bot interacts with the AI.
+
+These three functions together enable the bot to dynamically query the AI model, process various types of requests (such as general queries or command-specific help), and return informative, context-aware responses to the user.
+
+___
+
+###### `economy.py` - Economy System Logic
+
+The `economy.py` file contains the logic for managing the economy system within your Discord server, including handling user balances, transactions, and server-wide economic features like currency and leaderboards. This file interacts with the configuration defined in `config.py` to manage the server's economy and allows for easy customization.
+
+**Features:**
+
+- **Currency Management**:  
+    The system provides functionality for awarding, removing, and checking user balances, as well as managing the server's currency type.
+    
+- **File Storage**:  
+    All economy-related data is stored in files within the folder specified by `ECONOMY_FOLDER` in `config.py`. This ensures that user data persists even after the bot is restarted.
+    
+- **Economy Transactions**:  
+    Users can earn or spend currency through bot commands, such as `bet.py`. These transactions are reflected in the user's balance and saved incase the bot crashes.
+    
+
+**Configuration:**
+
+Economy-related settings are defined in `config.py` under the **Server Economy Settings** section:
+
+```python
+# Server Economy Settings
+ECONOMY_FOLDER = "YOUR_ECONOMY_FOLDER_NAME"  # Folder where economy files save
+CURRENCY_NAME = "YOUR_$_NAME"                # Name of your server's currency
+DEFAULT_CURRENCY_GIVE = NUMBER_HERE          # Default value adding currency
+DEFAULT_CURRENCY_TAKE = NUMBER_HERE          # Default value adding currency
+```
+
+- `ECONOMY_FOLDER`: Specifies where the economy files will be saved (e.g., user balances).
+- `CURRENCY_NAME`: Defines the name of your server's currency (e.g., "coins", "gold").
+- `DEFAULT_CURRENCY_GIVE`: The default amount of currency given to new users or upon certain actions.
+- `DEFAULT_CURRENCY_TAKE`: The default amount of currency deducted in specific commands or actions.
