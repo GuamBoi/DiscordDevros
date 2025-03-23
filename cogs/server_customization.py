@@ -130,21 +130,31 @@ class ServerCustomization(commands.Cog):
                     await user.add_roles(role)
                     # Update economy (add role to user's rolls)
                     if handle_roll_reaction(user.name, role.name):
-                        # Send a welcome message if it's not a color role
+                        # Send a welcome embed message if it's not a color role
                         if role_type != "color":
                             welcome_channel = self.bot.get_channel(config.WELCOME_CHANNEL)
                             if welcome_channel:
-                                await welcome_channel.send(f"Welcome {user.mention}, you have been given the {role.name} role!")
+                                embed = await create_embed(
+                                    "Role Assigned",
+                                    f"Welcome {user.mention}, you have been given the {role.name} role!",
+                                    color=discord.Color.green()
+                                )
+                                await welcome_channel.send(embed=embed)
                 elif action == "remove":
                     # Remove role from user
                     await user.remove_roles(role)
                     # Update economy (remove role from user's rolls)
                     if remove_role(user.name, role.name):
-                        # Send a goodbye message if it's not a color role
+                        # Send a goodbye embed message if it's not a color role
                         if role_type != "color":
                             goodbye_channel = self.bot.get_channel(config.GOODBYE_CHANNEL)
                             if goodbye_channel:
-                                await goodbye_channel.send(f"{user.mention} has been removed from the {role.name} role. Goodbye!")
+                                embed = await create_embed(
+                                    "Role Removed",
+                                    f"{user.mention} has been removed from the {role.name} role. Goodbye!",
+                                    color=discord.Color.red()
+                                )
+                                await goodbye_channel.send(embed=embed)
 
     def get_role_type_from_emoji(self, emoji):
         # Determine the role type based on the emoji reacted to
