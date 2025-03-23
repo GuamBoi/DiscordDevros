@@ -82,7 +82,7 @@ class BetCog(commands.Cog):
         resolution_embed = await create_embed(
             title="Bet Resolved",
             description=resolution_description,
-            color=discord.Color.red()
+            color=discord.Color.green()
         )
         # Send the resolved embed to the BETTING_CHANNEL
         betting_channel = self.bot.get_channel(BETTING_CHANNEL)
@@ -94,6 +94,13 @@ class BetCog(commands.Cog):
         if ctx.author == user_bet_against:
             await ctx.send("You can't bet against yourself!")
             return
+
+        # Delete the original !bet command message
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            await ctx.send("I don't have permission to delete messages.")
+        
         await self.initiate_bet(ctx, amount, user_bet_against, bet_explanation)
 
     @commands.Cog.listener()
