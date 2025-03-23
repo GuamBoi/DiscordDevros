@@ -1,6 +1,7 @@
 import os
 import json
-from config import BOT_NAME, COMMAND_PREFIX, HELP_COMMAND_CHANNEL_CATEGORY
+import inspect
+from config import *  # Import all values from config.py
 
 # Path to the commands JSON file
 COMMANDS_JSON_PATH = os.path.join("data", "commands.json")
@@ -19,13 +20,16 @@ def load_commands_data():
         with open(COMMANDS_JSON_PATH, "r") as f:
             data = json.load(f)
         
-        # Prepare the config variables for replacement
+        # Dynamically create config_vars from all variables in config.py,
+        # excluding certain sensitive ones.
         config_vars = {
-            "BOT_NAME": BOT_NAME,
-            "COMMAND_PREFIX": COMMAND_PREFIX,
-            "HELP_COMMAND_CHANNEL_CATEGORY": HELP_COMMAND_CHANNEL_CATEGORY
+            var: value
+            for var, value in globals().items()
+            if not var.startswith("__") and var not in [
+                "DISCORD_BOT_TOKEN", "OPENWEBUI_API_KEY", "OPENWEBUI_API_URL"
+            ]
         }
-
+        
         # Perform the placeholder replacement
         for cmd in data:
             for key in ["Description", "LLM_Context"]:
