@@ -8,8 +8,8 @@
     {
         "Command_Name": "bet",
         "Description": "Starts a bet with another member on the server for the specified amount.",
-        "Example": "{COMMAND_PREFIX}bet 50 @{BOT_NAME}",
-        "LLM_Context": "The `bet` command allows server members to start a bet with another member on the server. It sends an message to the betting channel asking the member tagged in the command to accept the bet. If they do it will generate a 2nd message asking both members to select the member that won. If they dont agree on the winner BOTH members are locked from placing another bet until they resolve their current one."
+        "Example": "{COMMAND_PREFIX}bet 50 @{BOT_NAME} OPTIONAL_BET_EXPLINATION_HERE",
+        "LLM_Context": "The `bet` command allows server members to start a bet with another member on the server. It has a bet value that can be modified by the member using the command, and an optional explination field members can use to explain the bet they are placing. It sends an message to the betting channel asking the member tagged in the command to accept the bet. If they do it will generate a 2nd message asking both members to select the member that won. If they dont agree on the winner BOTH members are locked from placing another bet until they resolve their current one."
     },
     {
         "Command_Name": "command_help",
