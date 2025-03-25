@@ -17,7 +17,7 @@ class Leaderboard(commands.Cog):
         
         embed = await create_embed(
             title=f"{CURRENCY_NAME} Balance",
-            description=f"You currently have {CURRENCY_SYMBOL}{balance_value}.",
+            description=f"{ctx.author.mention}, you currently have {CURRENCY_SYMBOL}{balance_value}.",
             color=discord.Color.green()
         )
         await ctx.send(embed=embed)
@@ -54,6 +54,5 @@ class Leaderboard(commands.Cog):
         await ctx.send(embed=embed)
         await ctx.message.delete()
 
-# Ensure setup() is async and awaits add_cog()
 async def setup(bot):
     await bot.add_cog(Leaderboard(bot))
