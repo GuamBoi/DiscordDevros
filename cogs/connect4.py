@@ -28,8 +28,9 @@ class Connect4Game:
         # Initialize the board with empty slots (using ConnectBoard emoji)
         self.board = [[ConnectBoard for _ in range(7)] for _ in range(6)]
         self.column_heights = [0] * 7  # Tracks the number of chips in each column
-        self.players = [player2, player1]  # Opponent goes first
-        self.turn = 0  # Opponent's turn first
+        # Reverse the order: opponent goes first, then challenger.
+        self.players = [player2, player1]
+        self.turn = 0  # Starts with the opponent (index 0)
         self.active = True
         self.winner = None
 
@@ -82,26 +83,32 @@ class Connect4(commands.Cog):
     async def create_game_board_embed(self, game):
         """Creates an embed displaying the current game board."""
         board_str = ""
+        # Loop from top (row 5) to bottom (row 0)
         for row in range(5, -1, -1):
             board_str += "".join(game.board[row]) + "\n"
+        # Choose embed color based on whose token is active
         color = discord.Color.red() if game.players[game.turn].token_emoji == ConnectRed else discord.Color.gold()
         embed = await create_embed("Connect 4", board_str, color=color)
         return embed
 
     @commands.command()
     async def connect4(self, ctx, opponent: discord.Member):
+        """Starts a game of Connect4 with the mentioned opponent."""
+        # Delete the command message to keep channels clean
         await ctx.message.delete()
 
         if opponent == ctx.author:
             await ctx.send("You cannot play against yourself!")
             return
 
+        # Get the channel defined in the config
         channel = self.bot.get_channel(CONNECT4_CHANNEL)
         if channel is None:
             await ctx.send("Connect4 channel not found.")
             return
 
-        # Initialize players (opponent goes first)
+        # Initialize players with their respective tokens
+        # Challenger is ctx.author and opponent is the mentioned user.
         player1 = Connect4Player(ctx.author, ConnectRed)
         player2 = Connect4Player(opponent, ConnectYellow)
         game = Connect4Game(player1, player2)
@@ -109,9 +116,11 @@ class Connect4(commands.Cog):
         board_embed = await self.create_game_board_embed(game)
         game_message = await channel.send(f"{game.players[game.turn].member.mention}, it's your turn!", embed=board_embed)
 
+        # Add number reactions (for columns 1-7)
         for emoji in number_emojis:
             await game_message.add_reaction(emoji)
 
+        # Reaction check function
         def check(reaction, user):
             return (
                 user == game.players[game.turn].member and
@@ -119,6 +128,7 @@ class Connect4(commands.Cog):
                 str(reaction.emoji) in number_emojis
             )
 
+        # Main game loop (no timeout so users can play at their own pace)
         while game.active:
             reaction, user = await self.bot.wait_for('reaction_add', check=check)
             column = number_emojis.index(str(reaction.emoji))
@@ -127,13 +137,68 @@ class Connect4(commands.Cog):
                 await channel.send(error)
             else:
                 new_embed = await self.create_game_board_embed(game)
+                # Ping the current player for their turn
                 await game_message.edit(content=f"{game.players[game.turn].member.mention}, it's your turn!", embed=new_embed)
-                try:
-                    await game_message.remove_reaction(reaction.emoji, user)
-                except Exception:
-                    pass
+            # Remove the reaction so players can reuse it in future moves
+            try:
+                await game_message.remove_reaction(reaction.emoji, user)
+            except Exception:
+                pass
 
-        # Game Over logic remains the same
+        # Game has ended – update the economy and streak values
+        if game.winner:
+            winner = game.winner
+            loser = game.players[1 - game.players.index(winner)]
+            add_currency(winner.member.name, GAME_WIN)
+            remove_currency(loser.member.name, GAME_LOSE)
+            # Update Connect4 streak for winner and reset for loser
+            winner_data = load_economy(winner.member.name)
+            winner_data["connect4_streak"] = winner_data.get("connect4_streak", 0) + 1
+            save_economy(winner.member.name, winner_data)
+            loser_data = load_economy(loser.member.name)
+            loser_data["connect4_streak"] = 0
+            save_economy(loser.member.name, loser_data)
+
+            result_embed = await create_embed(
+                "Game Over",
+                f"{winner.member.mention} wins!\nYou have been awarded {GAME_WIN} {CURRENCY_NAME}.\n"
+                f"{loser.member.mention} loses {GAME_LOSE} {CURRENCY_NAME}.\n"
+                f"{winner.member.mention} now has a Connect4 win streak of {winner_data['connect4_streak']}.",
+                color=discord.Color.green()
+            )
+            await channel.send(embed=result_embed)
+        else:
+            await channel.send("It's a draw!")
+
+    @commands.command()
+    async def connect4_leaderboard(self, ctx):
+        """Displays the top 10 members with the highest Connect4 win streaks."""
+        # Delete the command message to keep channels clean
+        await ctx.message.delete()
+
+        leaderboard = []
+        # Iterate over all economy files
+        for filename in os.listdir(ECONOMY_FOLDER):
+            if filename.endswith(".json"):
+                filepath = os.path.join(ECONOMY_FOLDER, filename)
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                streak = data.get("connect4_streak", 0)
+                username = data.get("username", "Unknown")
+                leaderboard.append((username, streak))
+        # Sort by streak descending
+        leaderboard.sort(key=lambda x: x[1], reverse=True)
+        top10 = leaderboard[:10]
+
+        description = ""
+        for idx, (username, streak) in enumerate(top10, start=1):
+            # Try to get the guild member to mention them; fallback to username if not found
+            member = ctx.guild.get_member_named(username)
+            mention = member.mention if member else username
+            description += f"**{idx}.** {mention} - `{streak}`\n"
+
+        embed = await create_embed("Connect4 Leaderboard", description, color=discord.Color.gold())
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Connect4(bot))
