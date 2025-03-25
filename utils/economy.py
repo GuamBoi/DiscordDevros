@@ -28,6 +28,8 @@ def load_economy(username):
             data["bet_lock"] = 0
         if "wordle_streak" not in data:
             data["wordle_streak"] = 0
+        if "connect4_streak" not in data:
+            data["connect4_streak"] = 0
         if "rolls" not in data:
             data["rolls"] = []
         if "currency" not in data:
@@ -42,6 +44,7 @@ def load_economy(username):
             "currency": DEFAULT_CURRENCY_GIVE,
             "bet_lock": 0,
             "wordle_streak": 0,
+            "connect4_streak": 0,
             "rolls": []
         }
         save_economy(username, data)
@@ -83,6 +86,17 @@ def set_wordle_streak(username, streak):
     """Set the Wordle streak for a user."""
     data = load_economy(username)
     data["wordle_streak"] = streak
+    save_economy(username, data)
+    return streak
+
+def get_connect4_streak(username):
+    """Retrieve the current Connect4 streak for a user."""
+    return load_economy(username)["connect4_streak"]
+
+def set_connect4_streak(username, streak):
+    """Set the Connect4 streak for a user."""
+    data = load_economy(username)
+    data["connect4_streak"] = streak
     save_economy(username, data)
     return streak
 
