@@ -63,13 +63,25 @@
         "Command_Name": "balance",
         "Description": "Checks your {CURRENCY_NAME} balance",
         "Example": "{COMMAND_PREFIX}balance",
-        "LLM_Context": "The `balance` command can be used by any member to check the amount of {CURRENCY_NAME} they own on the server."
+        "LLM_Context": "The `balance` command can be used by any member to check the amount of {CURRENCY_NAME} they own on the server. It also displays their Wordle and Connect 4 streak"
     },
     {
         "Command_Name": "leaderboard",
         "Description": "Displays top 10 members with the highest {CURRENCY_NAME} balance",
         "Example": "{COMMAND_PREFIX}leaderboard",
         "LLM_Context": "The `leaderboard` command sends a detailed embed to the channel it was used in displaying the top 10 members with the highest amount of the servers {CURRENCY_NAME} currency in decending order."
+    },
+    {
+        "Command_Name": "wordle_leaderboard",
+        "Description": "Shows the top 10 members with the highest Wordle streak.",
+        "Example": "!wordle_leaderboard",
+        "LLM_Context": "Shows the top 10 members with the highest Wordle streak."
+    },
+    {
+        "Command_Name": "connect4_leaderboard",
+        "Description": "Shows the top 10 members with the highest Connect 4 streak.",
+        "Example": "!connect4_leaderboard",
+        "LLM_Context": "Shows the top 10 members with the highest Connect 4 streak."
     },
     {
         "Command_Name": "wordle",
@@ -82,5 +94,11 @@
         "Description": "Adds a guess to your wordle game. (Can only be used after `{COMMAND_PREFIX}wordle `)",
         "Example": "{COMMAND_PREFIX}guess YOUR_GUESS_HERE",
         "LLM_Context": "The `guess` command can be used AFTER a member uses the {COMMAND_PREFIX}wordle command to guess their word in 6 guesses or less. This means members can use the `{COMMAND_PREFIX}guess` command 6 times before they will have to use the `{COMMAND_PREFIX}wordle` command again to continue guessing."
+    },
+    {
+        "Command_Name": "connect4",
+        "Description": "Starts a Connect 4 game with another server member",
+        "Example": "!connect4 @{BOT_NAME}",
+        "LLM_Context": "The `connect4` command starts a Connect 4 game with the server member tagged at the end of the command."
     }
 ]
