@@ -19,7 +19,7 @@ class Leaderboard(commands.Cog):
         connect4_streak = econ_data.get("connect4_streak", "No Connect 4 Streak Found")
         
         description = (
-            f"{ctx.author.mention}, you currently have {CURRENCY_SYMBOL}{balance_value}.\n\n"
+            f"{ctx.author.mention}, you currently have **{CURRENCY_SYMBOL}{balance_value}**.\n\n"
             f"**Wordle Streak:** `{wordle_streak}`\n"
             f"**Connect4 Streak:** `{connect4_streak}`"
         )
