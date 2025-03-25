@@ -184,25 +184,25 @@ class ShipSizeView(discord.ui.View):
         self.selected_size = None
 
     @discord.ui.button(label="2", style=discord.ButtonStyle.secondary)
-    async def size2(self, interaction: discord.Interaction):
+    async def size2(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.selected_size = 2
         await interaction.response.send_message("Ship size 2 selected.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="3", style=discord.ButtonStyle.secondary)
-    async def size3(self, interaction: discord.Interaction):
+    async def size3(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.selected_size = 3
         await interaction.response.send_message("Ship size 3 selected.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="4", style=discord.ButtonStyle.secondary)
-    async def size4(self, interaction: discord.Interaction):
+    async def size4(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.selected_size = 4
         await interaction.response.send_message("Ship size 4 selected.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="5", style=discord.ButtonStyle.secondary)
-    async def size5(self, interaction: discord.Interaction):
+    async def size5(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.selected_size = 5
         await interaction.response.send_message("Ship size 5 selected.", ephemeral=True)
         self.stop()
@@ -234,41 +234,41 @@ class ShipPlacementGridView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Up", style=discord.ButtonStyle.secondary)
-    async def move_up(self, interaction: discord.Interaction):
+    async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
         r, c = self.cursor
         if r > 0:
             self.cursor = (r - 1, c)
         await self.update_message(interaction)
 
     @discord.ui.button(label="Down", style=discord.ButtonStyle.secondary)
-    async def move_down(self, interaction: discord.Interaction):
+    async def move_down(self, interaction: discord.Interaction, button: discord.ui.Button):
         r, c = self.cursor
         if r < 9:
             self.cursor = (r + 1, c)
         await self.update_message(interaction)
 
     @discord.ui.button(label="Left", style=discord.ButtonStyle.secondary)
-    async def move_left(self, interaction: discord.Interaction):
+    async def move_left(self, interaction: discord.Interaction, button: discord.ui.Button):
         r, c = self.cursor
         if c > 0:
             self.cursor = (r, c - 1)
         await self.update_message(interaction)
 
     @discord.ui.button(label="Right", style=discord.ButtonStyle.secondary)
-    async def move_right(self, interaction: discord.Interaction):
+    async def move_right(self, interaction: discord.Interaction, button: discord.ui.Button):
         r, c = self.cursor
         if c < 9:
             self.cursor = (r, c + 1)
         await self.update_message(interaction)
 
     @discord.ui.button(label="Rotate", style=discord.ButtonStyle.primary, emoji="🔄")
-    async def rotate(self, interaction: discord.Interaction):
+    async def rotate(self, interaction: discord.Interaction, button: discord.ui.Button):
         current_index = ORIENTATIONS.index(self.orientation)
         self.orientation = ORIENTATIONS[(current_index + 1) % len(ORIENTATIONS)]
         await self.update_message(interaction)
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.success, emoji="✅")
-    async def confirm(self, interaction: discord.Interaction):
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.ship_size, self.orientation)
         if coords is None:
@@ -280,7 +280,7 @@ class ShipPlacementGridView(discord.ui.View):
         self.stop()
 
     @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, emoji="❌")
-    async def remove(self, interaction: discord.Interaction):
+    async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
         removed = self.game.remove_ship(self.player, self.ship_size)
         if removed:
             self.game.placement_ready[self.player] = False
@@ -296,7 +296,7 @@ class StartGameView(discord.ui.View):
         self.started = False
 
     @discord.ui.button(label="Start", style=discord.ButtonStyle.success)
-    async def start(self, interaction: discord.Interaction):
+    async def start(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.started = True
         await interaction.response.send_message("Board locked. Waiting for other players to start...", ephemeral=True)
         self.stop()
