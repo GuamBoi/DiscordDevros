@@ -9,15 +9,24 @@ class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='balance', help='Check your current balance')
+    @commands.command(name='balance', help='Check your current balance and streaks')
     async def balance(self, ctx):
-        """Display the user's current currency balance."""
+        """Display the user's current currency balance, Wordle streak, and Connect4 streak."""
         username = ctx.author.name  # Using username as key in economy files
-        balance_value = load_economy(username)["currency"]
+        econ_data = load_economy(username)
+        balance_value = econ_data.get("currency", "No Balance Found")
+        wordle_streak = econ_data.get("wordle_streak", "No Wordle Streak Found")
+        connect4_streak = econ_data.get("connect4_streak", "No Connect 4 Streak Found")
+        
+        description = (
+            f"{ctx.author.mention}, you currently have {CURRENCY_SYMBOL}{balance_value}.\n\n"
+            f"**Wordle Streak:** `{wordle_streak}`\n"
+            f"**Connect4 Streak:** `{connect4_streak}`"
+        )
         
         embed = await create_embed(
             title=f"{CURRENCY_NAME} Balance",
-            description=f"{ctx.author.mention}, you currently have {CURRENCY_SYMBOL}{balance_value}.",
+            description=description,
             color=discord.Color.green()
         )
         await ctx.send(embed=embed)
@@ -33,7 +42,7 @@ class Leaderboard(commands.Cog):
             if file.endswith(".json"):
                 username = file.replace(".json", "")
                 data = load_economy(username)
-                economy_data.append((username, data['currency']))
+                economy_data.append((username, data.get('currency', 0)))
         
         # Sort the data by currency in descending order and take the top 10
         economy_data.sort(key=lambda x: x[1], reverse=True)
