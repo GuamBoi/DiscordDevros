@@ -193,9 +193,9 @@ class Connect4(commands.Cog):
             # Try to get the guild member to mention them; fallback to username if not found
             member = ctx.guild.get_member_named(username)
             mention = member.mention if member else username
-            description += f"**{idx}.** {mention} - {streak} streak\n"
+            description += f"**{idx}.** {mention} - `{streak}`\n"
 
-        embed = await create_embed("Connect4 Leaderboard", description, color=discord.Color.purple())
+        embed = await create_embed("Connect4 Leaderboard", description, color=discord.Color.gold())
         await ctx.send(embed=embed)
 
 async def setup(bot):
