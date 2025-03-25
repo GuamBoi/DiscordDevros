@@ -86,13 +86,6 @@ class Connect4(commands.Cog):
         # Loop from top (row 5) to bottom (row 0)
         for row in range(5, -1, -1):
             board_str += "".join(game.board[row]) + "\n"
-        
-        # Add a single blank line between the game board and the numbers
-        board_str += "\n"
-        
-        # Add number emojis as column headers (separated by spaces)
-        board_str += " ".join(number_emojis)
-        
         # Choose embed color based on whose token is active
         color = discord.Color.red() if game.players[game.turn].token_emoji == ConnectRed else discord.Color.gold()
         embed = await create_embed("Connect 4", board_str, color=color)
