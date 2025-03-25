@@ -63,11 +63,9 @@ class Wordle(commands.Cog):
         await ctx.message.delete()
         username = ctx.author.name
 
-        # Try generating word with LLM
         word = (await query_llm_with_prompt("wordle_prompt", ctx)).strip().lower()
         print(f"Generated word: {word}")
 
-        # Validate the word and add it to the wordle file if valid
         if word and len(word) == 5:
             add_word_to_file(word)
         else:
@@ -77,7 +75,6 @@ class Wordle(commands.Cog):
                 return
             print(f"Using fallback word: {word}")
 
-        # Create game state
         channel = self.bot.get_channel(WORDLE_CHANNEL)
         embed = await create_embed("Wordle Game", f"A new Wordle game has started! You have {MAX_ATTEMPTS} attempts to guess the word.")
         message = await channel.send(embed=embed)
@@ -123,8 +120,8 @@ class Wordle(commands.Cog):
         embed = await create_embed("Wordle Game", description)
         await game["message"].edit(embed=embed)
 
-    @commands.command(name="wordle_streaks")
-    async def wordle_streaks(self, ctx):
+    @commands.command(name="wordle_leaderboard")
+    async def wordle_leaderboard(self, ctx):
         streaks = []
         for filename in os.listdir(ECONOMY_FOLDER):
             if filename.endswith(".json"):
@@ -142,7 +139,7 @@ class Wordle(commands.Cog):
         top10 = streaks[:10]
 
         description = "".join(f"{username} - `{streak}`\n" for username, streak in top10) or "No streak data available."
-        embed = await create_embed("Wordle Streak Leaderboard", description, color=discord.Color.gold())
+        embed = await create_embed("Wordle Leaderboard", description, color=discord.Color.gold())
         await ctx.send(embed=embed)
 
 async def setup(bot):
