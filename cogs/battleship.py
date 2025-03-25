@@ -210,7 +210,7 @@ class ShipSizeView(discord.ui.View):
 class ShipPlacementGridView(discord.ui.View):
     """
     Interactive grid for ship placement.
-    The cursor is shown as an arrow emoji reflecting current orientation.
+    The cursor is shown as an arrow emoji reflecting the current orientation.
     """
     def __init__(self, game: BattleshipGame, player: discord.Member, ship_size: int):
         super().__init__(timeout=300)
@@ -432,10 +432,10 @@ class Battleship(commands.Cog):
                     final_board1 = await create_embed("Battleship - Final Board", game.board_to_string(game.board1))
                     final_board2 = await create_embed("Battleship - Final Board", game.board_to_string(game.board2))
                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-                    await channel.send(f\"Final Boards for Battleship game between {game.player1.mention} and {game.player2.mention}:\")
+                    await channel.send(f"Final Boards for Battleship game between {game.player1.mention} and {game.player2.mention}:")
                     await channel.send(embed=final_board1)
                     await channel.send(embed=final_board2)
-                    await ctx.send(f\"{winner.mention} wins the Battleship game!\")
+                    await ctx.send(f"{winner.mention} wins the Battleship game!")
                     del self.games[key]
                     return
                 return
@@ -452,11 +452,11 @@ class Battleship(commands.Cog):
                 removed = game.remove_all_ships(ctx.author)
                 if removed:
                     game.placement_ready[ctx.author] = False
-                    await ctx.send(f\"{ctx.author.mention}, all your ships have been removed. Please re-place them.\", delete_after=10)
+                    await ctx.send(f"{ctx.author.mention}, all your ships have been removed. Please re-place them.", delete_after=10)
                 else:
-                    await ctx.send(f\"{ctx.author.mention}, you have no ships to remove.\", delete_after=10)
+                    await ctx.send(f"{ctx.author.mention}, you have no ships to remove.", delete_after=10)
                 return
-        await ctx.send(\"No active Battleship game found for you.\", delete_after=10)
+        await ctx.send("No active Battleship game found for you.", delete_after=10)
 
     def check_win(self, game: BattleshipGame):
         """Check if all ship cells of a player have been hit."""
