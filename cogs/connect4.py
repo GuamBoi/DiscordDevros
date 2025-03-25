@@ -81,15 +81,22 @@ class Connect4(commands.Cog):
         self.bot = bot
 
     async def create_game_board_embed(self, game):
-        """Creates an embed displaying the current game board."""
-        board_str = ""
-        # Loop from top (row 5) to bottom (row 0)
-        for row in range(5, -1, -1):
-            board_str += "".join(game.board[row]) + "\n"
-        # Choose embed color based on whose token is active
-        color = discord.Color.red() if game.players[game.turn].token_emoji == ConnectRed else discord.Color.gold()
-        embed = await create_embed("Connect 4", board_str, color=color)
-        return embed
+    """Creates an embed displaying the current game board."""
+    board_str = ""
+    # Loop from top (row 5) to bottom (row 0)
+    for row in range(5, -1, -1):
+        board_str += "".join(game.board[row]) + "\n"
+    
+    # Add a line space between the game board and the numbers
+    board_str += "\n"  # This adds a single line space
+    
+    # Add number emojis
+    board_str += " ".join(number_emojis)  # Add number emojis as column headers
+
+    # Choose embed color based on whose token is active
+    color = discord.Color.red() if game.players[game.turn].token_emoji == ConnectRed else discord.Color.gold()
+    embed = await create_embed("Connect 4", board_str, color=color)
+    return embed
 
     @commands.command()
     async def connect4(self, ctx, opponent: discord.Member):
