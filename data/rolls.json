@@ -30,7 +30,7 @@
         "description": "**Notification Options:**",
         "note": "Select the notifications you wish to receive.",
         "options": {
-            "🆓": {"name": "`Free Games`", "role_id": 1197633716256776243},
+            "🆓": {"name": "`Free Games`", "role_id": 1197633716256776243}
         }
     },
     "color_roles_message_id": null,
