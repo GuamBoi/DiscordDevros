@@ -58,7 +58,6 @@ class Wordle(commands.Cog):
         if not word:
             await ctx.send(f"{ctx.author.mention} No valid word available. Please add some 5-letter words to the file.")
             return
-        print(f"Selected word: {word}")
 
         channel = self.bot.get_channel(WORDLE_CHANNEL)
         embed = await create_embed("Wordle Game", f"A new Wordle game has started! You have {MAX_ATTEMPTS} attempts to guess the word.")
