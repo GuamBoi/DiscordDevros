@@ -11,7 +11,7 @@ from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL
 EMPTY_CELL = "⬜"       # Open ocean
 SHIP_CELL = "🟩"        # Placed ship cell during placement
 HIT_CELL = "🟥"         # Ship hit
-MISS_CELL = "🟦"        # Miss (blue square)
+MISS_CELL = "🟦"         # Miss (blue square) – also used for header alignment
 
 # Arrow emojis used as cursor; also indicate orientation.
 CURSOR_EMOJIS = {
@@ -128,7 +128,7 @@ class BattleshipGame:
 
     def board_to_string(self, board):
         """Return a string representation of a board with emoji labels."""
-        header = "   " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
+        header = "🟦 " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
         s = header
         for i, row in enumerate(board):
             s += LETTER_EMOJIS[ROWS[i]] + "  " + " ".join(row) + "\n"
@@ -148,7 +148,7 @@ class BattleshipGame:
                 else:
                     row_disp.append(board[r][c])
             display.append(row_disp)
-        header = "   " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
+        header = "🟦 " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
         s = header
         for i, row in enumerate(display):
             s += LETTER_EMOJIS[ROWS[i]] + "  " + " ".join(row) + "\n"
@@ -288,7 +288,11 @@ class ShipPlacementGridView(discord.ui.View):
             return
         self.game.place_ship(self.player, self.ship_size, coords)
         self.game.placement_ready[self.player] = True
-        await interaction.response.send_message(f"Ship of size {self.ship_size} placed at {coords_to_label(*self.cursor)} facing {self.orientation}.", ephemeral=True)
+        # Update the embed to show the board with the placed ship (green cells)
+        board_str = self.game.placement_board_to_string(board)
+        text = f"Ship of size {self.ship_size} placed at {coords_to_label(*self.cursor)} facing {self.orientation}."
+        embed = await create_embed("Battleship - Ship Placement", text + "\n\n" + board_str)
+        await interaction.response.edit_message(embed=embed, view=None)
         self.stop()
 
     @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, emoji="❌")
