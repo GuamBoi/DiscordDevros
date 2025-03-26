@@ -23,6 +23,10 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
     await load_cogs()
     print("Cogs Loaded Successfully!")
+    
+    # Set custom bot status to suggest using the commands
+    activity = discord.Activity(type=discord.ActivityType.listening, name=f"{COMMAND_PREFIX}commands for a list of commands")
+    await bot.change_presence(activity=activity)
 
 # Run the bot
 bot.run(DISCORD_BOT_TOKEN)
