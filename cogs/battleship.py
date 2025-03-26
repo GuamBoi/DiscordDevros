@@ -54,15 +54,18 @@ class BattleshipGame:
         # Record of shots fired by each player (for shot history).
         self.shots1 = [[EMPTY_CELL for _ in range(10)] for _ in range(10)]
         self.shots2 = [[EMPTY_CELL for _ in range(10)] for _ in range(10)]
-        # Ships placed: dictionary mapping ship size to list of coordinates.
-        self.ships1 = {}
+        # Ships placed: dictionary mapping ship size to list(s) of coordinates.
+        # For ships that can have multiple copies (like the 3-cell ship), we store a list per size.
+        self.ships1 = {}  
         self.ships2 = {}
         # Each player must place one ship for each of these sizes.
-        self.ship_sizes = [2, 3, 4, 5]
+        # Fleet now includes two 3-cell ships.
+        self.ship_sizes = [2, 3, 3, 4, 5]
         # Ready flags for each player's placement phase.
         self.placement_ready = {self.player1: False, self.player2: False}
         self.phase = "placement"  # or "firing"
         self.current_turn = None  # For firing phase
+        self.prompt_message = None  # Persistent turn prompt message in BATTLESHIP_CHANNEL
 
     def can_place_ship(self, board, start_row, start_col, ship_size, orientation):
         """Return list of coordinates if ship placement is valid; else None."""
@@ -89,27 +92,23 @@ class BattleshipGame:
         """Place a ship on the player's board and record it."""
         if player == self.player1:
             board = self.board1
-            self.ships1[ship_size] = coords
+            self.ships1.setdefault(ship_size, []).append(coords)
         else:
             board = self.board2
-            self.ships2[ship_size] = coords
+            self.ships2.setdefault(ship_size, []).append(coords)
         for r, c in coords:
             board[r][c] = SHIP_CELL
 
     def remove_ship(self, player: discord.Member, ship_size: int):
-        """Remove a placed ship of the given size from the player's board."""
-        if player == self.player1:
-            if ship_size in self.ships1:
-                coords = self.ships1.pop(ship_size)
-                board = self.board1
-            else:
-                return False
+        """Remove one placed ship of the given size from the player's board."""
+        if player == self.player1 and ship_size in self.ships1 and self.ships1[ship_size]:
+            coords = self.ships1[ship_size].pop()  # Remove the last placed ship of that size
+            board = self.board1
+        elif player == self.player2 and ship_size in self.ships2 and self.ships2[ship_size]:
+            coords = self.ships2[ship_size].pop()
+            board = self.board2
         else:
-            if ship_size in self.ships2:
-                coords = self.ships2.pop(ship_size)
-                board = self.board2
-            else:
-                return False
+            return False
         for r, c in coords:
             board[r][c] = EMPTY_CELL
         return True
@@ -118,11 +117,7 @@ class BattleshipGame:
         """Remove all ships for the given player."""
         removed_any = False
         for size in self.ship_sizes:
-            if player == self.player1 and size in self.ships1:
-                self.remove_ship(player, size)
-                removed_any = True
-            elif player == self.player2 and size in self.ships2:
-                self.remove_ship(player, size)
+            while self.remove_ship(player, size):
                 removed_any = True
         return removed_any
 
@@ -177,18 +172,40 @@ class BattleshipGame:
         if opp_board[row][col] in [HIT_CELL, MISS_CELL]:
             return "You already fired at that cell."
         hit = False
-        for coords in ships.values():
-            if (row, col) in coords:
-                hit = True
-                opp_board[row][col] = HIT_CELL
-                shot_board[row][col] = HIT_CELL
+        for ship_coords_list in ships.values():
+            for coords in ship_coords_list:
+                if (row, col) in coords:
+                    hit = True
+                    opp_board[row][col] = HIT_CELL
+                    shot_board[row][col] = HIT_CELL
+                    break
+            if hit:
                 break
         if not hit:
             opp_board[row][col] = MISS_CELL
             shot_board[row][col] = MISS_CELL
         return "hit" if hit else "miss"
 
-# --- Persistent Ship Placement UI ---
+# --- Persistent Turn Prompt Function ---
+
+async def update_turn_prompt(game: BattleshipGame, bot: discord.Client):
+    # Determine active player and their shot board
+    if game.current_turn == game.player1:
+        shot_board = game.shots1
+        active = game.player1
+    else:
+        shot_board = game.shots2
+        active = game.player2
+    prompt_text = (f"{active.mention}, it's your turn! Use !fire <cell> to take your shot.\n\n"
+                   f"Your guessed board:\n{game.board_to_string(shot_board)}")
+    embed = await create_embed("Battleship - Turn Prompt", prompt_text)
+    channel = bot.get_channel(BATTLESHIP_CHANNEL)
+    if game.prompt_message is None:
+        game.prompt_message = await channel.send(embed=embed)
+    else:
+        await game.prompt_message.edit(embed=embed)
+
+# --- Persistent Ship Placement UI (Unchanged except ship_sizes are updated in game) ---
 
 class ShipSizeSelect(discord.ui.Select):
     def __init__(self, placed_ships):
@@ -208,7 +225,6 @@ class ShipSizeSelect(discord.ui.Select):
         if view.placed_ships[size]:
             await interaction.response.send_message(f"Ship of size {size} is already placed. Use the Remove button to reposition it.", ephemeral=True)
         else:
-            # Acknowledge selection without sending a new response.
             try:
                 if not interaction.response.is_done():
                     await interaction.response.defer(ephemeral=True)
@@ -224,7 +240,6 @@ class FinishBattlefieldButton(discord.ui.Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: discord.Interaction):
-        # Only allow finishing if all ships are placed.
         if not all(self.parent_view.placed_ships.values()):
             await interaction.response.send_message("You must place one ship of each size before finishing.", ephemeral=True)
             return
@@ -241,12 +256,6 @@ class FinishBattlefieldButton(discord.ui.Button):
         self.parent_view.stop()
 
 class PersistentShipPlacementView(discord.ui.View):
-    """
-    A persistent view for ship placement.
-    It includes a dropdown to select which ship (by size) to place or remove,
-    arrow buttons, rotate, place ship, remove, and a Finish Battlefield button.
-    The board display updates dynamically.
-    """
     def __init__(self, game: BattleshipGame, player: discord.Member):
         super().__init__(timeout=300)
         self.game = game
@@ -254,16 +263,12 @@ class PersistentShipPlacementView(discord.ui.View):
         self.bot = game.player1.guild if hasattr(game.player1, "guild") else None
         self.cursor = (0, 0)
         self.orientation = "right"
-        # Track placement status for each ship size.
         self.placed_ships = {size: False for size in game.ship_sizes}
-        self.current_ship_size = None  # currently selected ship size
-        # Always add the select menu.
+        self.current_ship_size = None
         self.add_item(ShipSizeSelect(self.placed_ships))
-        # Add the Finish Battlefield button.
         self.add_item(FinishBattlefieldButton(self))
 
     async def update_select_menu(self):
-        # Update the select menu's options without removing it.
         for child in self.children:
             if isinstance(child, ShipSizeSelect):
                 new_options = []
@@ -417,7 +422,7 @@ class Battleship(commands.Cog):
         game.phase = "firing"
         game.current_turn = ctx.author  # Let challenger start
 
-        # Send each player their boards via DM:
+        # Send each player their boards via DM.
         board_embed1 = await create_embed("Battleship - Your Board", game.board_to_string(game.board1))
         board_embed2 = await create_embed("Battleship - Your Board", game.board_to_string(game.board2))
         shot_embed1 = await create_embed("Battleship - Shots Taken", game.board_to_string(game.shots1))
@@ -426,6 +431,9 @@ class Battleship(commands.Cog):
         await ctx.author.send(embed=shot_embed1)
         await opponent.send(embed=board_embed2)
         await opponent.send(embed=shot_embed2)
+
+        # Create the persistent turn prompt in BATTLESHIP_CHANNEL.
+        await update_turn_prompt(game, self.bot)
 
         await ctx.send("Battleship game started! Use !fire <cell> (e.g. !fire A1) to take your turn.")
 
@@ -445,24 +453,7 @@ class Battleship(commands.Cog):
                 if result not in ["hit", "miss"]:
                     await ctx.send(result)
                     return
-                # Update boards after the shot
-                if ctx.author == game.player1:
-                    board_embed = await create_embed("Battleship - Your Board", game.board_to_string(game.board1))
-                    shot_embed = await create_embed("Battleship - Shots Taken", game.board_to_string(game.shots1))
-                    opponent_embed = await create_embed("Battleship - Opponent Board", game.board_to_string(game.board2))
-                    await game.player1.send(embed=board_embed)
-                    await game.player1.send(embed=shot_embed)
-                    await game.player2.send(embed=opponent_embed)
-                else:
-                    board_embed = await create_embed("Battleship - Your Board", game.board_to_string(game.board2))
-                    shot_embed = await create_embed("Battleship - Shots Taken", game.board_to_string(game.shots2))
-                    opponent_embed = await create_embed("Battleship - Opponent Board", game.board_to_string(game.board1))
-                    await game.player2.send(embed=board_embed)
-                    await game.player2.send(embed=shot_embed)
-                    await game.player1.send(embed=opponent_embed)
-                # Switch turn
-                game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
-                # Check for win condition
+                # Check for win condition.
                 if self.check_win(game):
                     winner = ctx.author
                     loser = game.player1 if winner == game.player2 else game.player2
@@ -477,6 +468,9 @@ class Battleship(commands.Cog):
                     await ctx.send(f"{winner.mention} wins the Battleship game!")
                     del self.games[key]
                     return
+                # Switch turn and update the prompt.
+                game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
+                await update_turn_prompt(game, self.bot)
                 return
         await ctx.send("No active Battleship game found for you.")
 
@@ -500,10 +494,11 @@ class Battleship(commands.Cog):
     def check_win(self, game: BattleshipGame):
         """Check if all ship cells of a player have been hit."""
         def all_ships_sunk(ships, board):
-            for coords in ships.values():
-                for r, c in coords:
-                    if board[r][c] != HIT_CELL:
-                        return False
+            for ship_coords_list in ships.values():
+                for coords in ship_coords_list:
+                    for r, c in coords:
+                        if board[r][c] != HIT_CELL:
+                            return False
             return True
         if all_ships_sunk(game.ships1, game.board2):
             return True
