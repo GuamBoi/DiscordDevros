@@ -191,23 +191,30 @@ class BattleshipGame:
 # --- Persistent Ship Placement UI ---
 
 class ShipSizeSelect(discord.ui.Select):
-    def __init__(self, available_ships):
-        options = [
-            discord.SelectOption(label=f"Ship Size {size}", value=str(size))
-            for size in available_ships
-        ]
-        super().__init__(placeholder="Select a ship to place", min_values=1, max_values=1, options=options)
+    def __init__(self, placed_ships):
+        # placed_ships is a dict mapping ship_size to bool (True if placed)
+        options = []
+        for size in sorted(placed_ships.keys()):
+            label = f"Ship Size {size}"
+            if placed_ships[size]:
+                label += " (Placed)"
+            options.append(discord.SelectOption(label=label, value=str(size)))
+        super().__init__(placeholder="Select a ship to place or remove", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         view: PersistentShipPlacementView = self.view
-        view.current_ship_size = int(self.values[0])
+        size = int(self.values[0])
+        view.current_ship_size = size
+        # Inform the user if the ship is already placed
+        if view.placed_ships[size]:
+            await interaction.response.send_message(f"Ship of size {size} is already placed. Use the Remove button to reposition it.", ephemeral=True)
         await view.update_message(interaction)
 
 class PersistentShipPlacementView(discord.ui.View):
     """
     A persistent view for ship placement.
-    It includes a dropdown to select which ship (by size) to place,
-    arrow buttons, rotate, place ship and remove buttons.
+    It includes a dropdown to select which ship (by size) to place or remove,
+    arrow buttons, rotate, place ship, remove, and a Finish Battlefield button.
     The board display updates dynamically.
     """
     def __init__(self, game: BattleshipGame, player: discord.Member):
@@ -216,24 +223,25 @@ class PersistentShipPlacementView(discord.ui.View):
         self.player = player
         self.cursor = (0, 0)
         self.orientation = "right"
-        self.available_ships = list(game.ship_sizes)  # ships not yet placed
+        # Instead of removing ship sizes from a list, we track which sizes are placed.
+        self.placed_ships = {size: False for size in game.ship_sizes}
         self.current_ship_size = None  # currently selected ship size
-        # Add the select menu if there are available ships.
-        if self.available_ships:
-            self.add_item(ShipSizeSelect(self.available_ships))
+        # Always add the select menu.
+        self.add_item(ShipSizeSelect(self.placed_ships))
+        # Add the Finish Battlefield button.
+        self.add_item(FinishBattlefieldButton(self))
 
     async def update_select_menu(self):
-        # Update only the select menu's options without clearing other buttons.
+        # Update the select menu's options without removing it.
         for child in self.children:
             if isinstance(child, ShipSizeSelect):
-                if self.available_ships:
-                    child.options = [
-                        discord.SelectOption(label=f"Ship Size {size}", value=str(size))
-                        for size in sorted(self.available_ships)
-                    ]
-                    child.disabled = False
-                else:
-                    child.disabled = True
+                new_options = []
+                for size in sorted(self.placed_ships.keys()):
+                    label = f"Ship Size {size}"
+                    if self.placed_ships[size]:
+                        label += " (Placed)"
+                    new_options.append(discord.SelectOption(label=label, value=str(size)))
+                child.options = new_options
 
     async def update_message(self, interaction: discord.Interaction):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
@@ -242,7 +250,7 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size:
             header = f"Placing ship of size {self.current_ship_size}.\n"
         else:
-            header = "Select a ship size to place from the dropdown below.\n"
+            header = "Select a ship size to place or remove from the dropdown below.\n"
         text = (header +
                 f"Current starting cell: {coords_to_label(*self.cursor)}\n"
                 "Use arrow buttons to move, rotate to change orientation, or press Place Ship to place your ship.\n"
@@ -287,8 +295,12 @@ class PersistentShipPlacementView(discord.ui.View):
 
     @discord.ui.button(label="Place Ship", style=discord.ButtonStyle.success, emoji="✅")
     async def place_ship(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.current_ship_size:
+        if self.current_ship_size is None:
             await interaction.response.send_message("Please select a ship size first.", ephemeral=True)
+            return
+        # Do not allow placing if already placed.
+        if self.placed_ships[self.current_ship_size]:
+            await interaction.response.send_message(f"Ship of size {self.current_ship_size} is already placed. Remove it to reposition.", ephemeral=True)
             return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.current_ship_size, self.orientation)
@@ -296,49 +308,47 @@ class PersistentShipPlacementView(discord.ui.View):
             await interaction.response.send_message("Invalid placement: Out of bounds or overlapping.", ephemeral=True)
             return
         self.game.place_ship(self.player, self.current_ship_size, coords)
-        if self.current_ship_size in self.available_ships:
-            self.available_ships.remove(self.current_ship_size)
+        self.placed_ships[self.current_ship_size] = True
         self.current_ship_size = None
         await self.update_select_menu()
-        # If no ships remain, mark placement as ready but do not disable arrow buttons.
-        if not self.available_ships:
-            self.game.placement_ready[self.player] = True
         await self.update_message(interaction)
 
     @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, emoji="❌")
     async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.current_ship_size:
+        if self.current_ship_size is None:
             await interaction.response.send_message("Select the ship size you want to remove.", ephemeral=True)
+            return
+        if not self.placed_ships[self.current_ship_size]:
+            await interaction.response.send_message(f"No ship of size {self.current_ship_size} is placed.", ephemeral=True)
             return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         removed = self.game.remove_ship(self.player, self.current_ship_size)
         if removed:
-            if self.current_ship_size not in self.available_ships:
-                self.available_ships.append(self.current_ship_size)
-                self.available_ships.sort()
+            self.placed_ships[self.current_ship_size] = False
             await interaction.response.send_message(f"Ship of size {self.current_ship_size} removed.", ephemeral=True)
         else:
-            await interaction.response.send_message("No ship of that size to remove.", ephemeral=True)
+            await interaction.response.send_message("Failed to remove ship.", ephemeral=True)
         self.current_ship_size = None
         await self.update_select_menu()
         await self.update_message(interaction)
 
-# --- Finish Battlefield View ---
+class FinishBattlefieldButton(discord.ui.Button):
+    def __init__(self, parent_view: PersistentShipPlacementView):
+        super().__init__(label="Finish Battlefield", style=discord.ButtonStyle.success)
+        self.parent_view = parent_view
 
-class FinishBattlefieldView(discord.ui.View):
-    """View with a Finish Battlefield button that locks in the player's board and notifies the channel."""
-    def __init__(self, bot):
-        super().__init__(timeout=300)
-        self.bot = bot
-        self.finished = False
-
-    @discord.ui.button(label="Finish Battlefield", style=discord.ButtonStyle.success)
-    async def finish(self, interaction: discord.Interaction, button: discord.ui.Button):
-        channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
+    async def callback(self, interaction: discord.Interaction):
+        # Only allow finishing if all ships are placed.
+        if not all(self.parent_view.placed_ships.values()):
+            await interaction.response.send_message("You must place one ship of each size before finishing.", ephemeral=True)
+            return
+        # Mark placement ready and send a message to the BATTLESHIP_CHANNEL.
+        self.parent_view.game.placement_ready[self.parent_view.player] = True
+        channel = self.parent_view.view.bot.get_channel(BATTLESHIP_CHANNEL)
         await channel.send(f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.")
-        self.finished = True
         await interaction.response.send_message("Finished placing ships. Waiting for the other player...", ephemeral=True)
-        self.stop()
+        # Disable further interactions.
+        self.parent_view.stop()
 
 # --- Battleship Cog ---
 
@@ -363,7 +373,7 @@ class Battleship(commands.Cog):
         # Send one persistent ship placement DM to each player.
         try:
             placement_embed = await create_embed("Battleship - Ship Placement",
-                "Select a ship size to place from the dropdown below.")
+                "Select a ship size to place or remove from the dropdown below.")
             view1 = PersistentShipPlacementView(game, ctx.author)
             view2 = PersistentShipPlacementView(game, opponent)
             await ctx.author.send(embed=placement_embed, view=view1)
@@ -384,22 +394,6 @@ class Battleship(commands.Cog):
                                            board_summary_p1 + "\n" + board_summary_p2,
                                            color=discord.Color.purple())
         await channel.send(embed=summary_embed)
-
-        # Now, send a Finish Battlefield button to each player to signal they are done.
-        finish_view1 = FinishBattlefieldView(self.bot)
-        finish_view2 = FinishBattlefieldView(self.bot)
-        try:
-            await ctx.author.send(embed=await create_embed("Battleship - Finish Battlefield",
-                                                            "Press Finish Battlefield when you have finished placing your ships."),
-                                    view=finish_view1)
-            await opponent.send(embed=await create_embed("Battleship - Finish Battlefield",
-                                                          "Press Finish Battlefield when you have finished placing your ships."),
-                                view=finish_view2)
-        except Exception:
-            await ctx.send("Could not send DM for finishing the game. Please ensure your DMs are open.")
-            return
-        while not (finish_view1.finished and finish_view2.finished):
-            await asyncio.sleep(1)
 
         # Transition to firing phase.
         game.phase = "firing"
