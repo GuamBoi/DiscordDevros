@@ -15,7 +15,7 @@ class EconomyAward(commands.Cog):
         Award currency to a server member.
         Usage: award <amount> @User <optional reason>
         """
-        # Ensure the awarded amount does not exceed the allowed limit.
+        # Check that the awarded amount does not exceed the allowed limit.
         if amount > DEFAULT_CURRENCY_GIVE:
             await ctx.send(f"You cannot award more than {DEFAULT_CURRENCY_GIVE} {CURRENCY_NAME} ({CURRENCY_SYMBOL}).")
             return
@@ -32,9 +32,15 @@ class EconomyAward(commands.Cog):
         if reason:
             description += f"\n**Reason:** {reason}"
         
-        embed = await create_embed(title, description)
+        # Create the embed.
+        embed_result = create_embed(title, description)
+        # If the result is awaitable, await it.
+        if hasattr(embed_result, '__await__'):
+            embed = await embed_result
+        else:
+            embed = embed_result
         
-        # Get the betting channel by its ID.
+        # Get the designated channel.
         channel = self.bot.get_channel(BETTING_CHANNEL)
         if channel:
             await channel.send(embed=embed)
@@ -42,7 +48,7 @@ class EconomyAward(commands.Cog):
             # Fallback: send in the current channel if BETTING_CHANNEL isn't found.
             await ctx.send(embed=embed)
         
-        # Optionally, confirm the action to the command invoker.
+        # Confirm the action to the moderator.
         await ctx.send(f"{member.mention} has been awarded **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}**.")
 
 def setup(bot):
