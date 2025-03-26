@@ -205,10 +205,40 @@ class ShipSizeSelect(discord.ui.Select):
         view: PersistentShipPlacementView = self.view
         size = int(self.values[0])
         view.current_ship_size = size
-        # Inform the user if the ship is already placed
         if view.placed_ships[size]:
             await interaction.response.send_message(f"Ship of size {size} is already placed. Use the Remove button to reposition it.", ephemeral=True)
+        else:
+            # Acknowledge selection without sending a new response.
+            try:
+                if not interaction.response.is_done():
+                    await interaction.response.defer(ephemeral=True)
+                else:
+                    await interaction.followup.send("", ephemeral=True)
+            except Exception:
+                pass
         await view.update_message(interaction)
+
+class FinishBattlefieldButton(discord.ui.Button):
+    def __init__(self, parent_view: "PersistentShipPlacementView"):
+        super().__init__(label="Finish Battlefield", style=discord.ButtonStyle.success)
+        self.parent_view = parent_view
+
+    async def callback(self, interaction: discord.Interaction):
+        # Only allow finishing if all ships are placed.
+        if not all(self.parent_view.placed_ships.values()):
+            await interaction.response.send_message("You must place one ship of each size before finishing.", ephemeral=True)
+            return
+        self.parent_view.game.placement_ready[self.parent_view.player] = True
+        channel = self.parent_view.bot.get_channel(BATTLESHIP_CHANNEL)
+        await channel.send(f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.")
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.send_message("Finished placing ships. Waiting for the other player...", ephemeral=True)
+            else:
+                await interaction.followup.send("Finished placing ships. Waiting for the other player...", ephemeral=True)
+        except Exception:
+            pass
+        self.parent_view.stop()
 
 class PersistentShipPlacementView(discord.ui.View):
     """
@@ -221,9 +251,10 @@ class PersistentShipPlacementView(discord.ui.View):
         super().__init__(timeout=300)
         self.game = game
         self.player = player
+        self.bot = game.player1.guild if hasattr(game.player1, "guild") else None
         self.cursor = (0, 0)
         self.orientation = "right"
-        # Instead of removing ship sizes from a list, we track which sizes are placed.
+        # Track placement status for each ship size.
         self.placed_ships = {size: False for size in game.ship_sizes}
         self.current_ship_size = None  # currently selected ship size
         # Always add the select menu.
@@ -257,7 +288,13 @@ class PersistentShipPlacementView(discord.ui.View):
                 "Use the Remove button to reposition if needed.\n\n" +
                 board_str)
         embed = await create_embed("Battleship - Ship Placement", text)
-        await interaction.response.edit_message(embed=embed, view=self)
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.edit_message(embed=embed, view=self)
+            else:
+                await interaction.followup.edit_message(message_id=interaction.message.id, embed=embed, view=self)
+        except Exception as e:
+            print(e)
 
     @discord.ui.button(label="Up", style=discord.ButtonStyle.secondary)
     async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -298,7 +335,6 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size is None:
             await interaction.response.send_message("Please select a ship size first.", ephemeral=True)
             return
-        # Do not allow placing if already placed.
         if self.placed_ships[self.current_ship_size]:
             await interaction.response.send_message(f"Ship of size {self.current_ship_size} is already placed. Remove it to reposition.", ephemeral=True)
             return
@@ -331,24 +367,6 @@ class PersistentShipPlacementView(discord.ui.View):
         self.current_ship_size = None
         await self.update_select_menu()
         await self.update_message(interaction)
-
-class FinishBattlefieldButton(discord.ui.Button):
-    def __init__(self, parent_view: PersistentShipPlacementView):
-        super().__init__(label="Finish Battlefield", style=discord.ButtonStyle.success)
-        self.parent_view = parent_view
-
-    async def callback(self, interaction: discord.Interaction):
-        # Only allow finishing if all ships are placed.
-        if not all(self.parent_view.placed_ships.values()):
-            await interaction.response.send_message("You must place one ship of each size before finishing.", ephemeral=True)
-            return
-        # Mark placement ready and send a message to the BATTLESHIP_CHANNEL.
-        self.parent_view.game.placement_ready[self.parent_view.player] = True
-        channel = self.parent_view.view.bot.get_channel(BATTLESHIP_CHANNEL)
-        await channel.send(f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.")
-        await interaction.response.send_message("Finished placing ships. Waiting for the other player...", ephemeral=True)
-        # Disable further interactions.
-        self.parent_view.stop()
 
 # --- Battleship Cog ---
 
