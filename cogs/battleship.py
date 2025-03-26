@@ -28,6 +28,17 @@ ORIENTATIONS = ["right", "down", "left", "up"]
 ROWS = list("ABCDEFGHIJ")
 COLUMNS = [str(i) for i in range(1, 11)]
 
+# Emoji mappings for letters and numbers.
+LETTER_EMOJIS = {
+    "A": "🇦", "B": "🇧", "C": "🇨", "D": "🇩", "E": "🇪",
+    "F": "🇫", "G": "🇬", "H": "🇭", "I": "🇮", "J": "🇯"
+}
+
+NUMBER_EMOJIS = {
+    "1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣",
+    "6": "6️⃣", "7": "7️⃣", "8": "8️⃣", "9": "9️⃣", "10": "🔟"
+}
+
 def coords_to_label(row, col):
     return f"{ROWS[row]}{col+1}"
 
@@ -116,10 +127,11 @@ class BattleshipGame:
         return removed_any
 
     def board_to_string(self, board):
-        """Return a string representation of a board with labels."""
-        s = "   " + " ".join(COLUMNS) + "\n"
+        """Return a string representation of a board with emoji labels."""
+        header = "   " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
+        s = header
         for i, row in enumerate(board):
-            s += ROWS[i] + "  " + " ".join(row) + "\n"
+            s += LETTER_EMOJIS[ROWS[i]] + "  " + " ".join(row) + "\n"
         return s
 
     def placement_board_to_string(self, board, cursor_data=None):
@@ -136,9 +148,10 @@ class BattleshipGame:
                 else:
                     row_disp.append(board[r][c])
             display.append(row_disp)
-        s = "   " + " ".join(COLUMNS) + "\n"
+        header = "   " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
+        s = header
         for i, row in enumerate(display):
-            s += ROWS[i] + "  " + " ".join(row) + "\n"
+            s += LETTER_EMOJIS[ROWS[i]] + "  " + " ".join(row) + "\n"
         return s
 
     def fire(self, player: discord.Member, target: str):
@@ -227,8 +240,7 @@ class ShipPlacementGridView(discord.ui.View):
         board_str = self.game.placement_board_to_string(board, cursor_data=cursor_data)
         text = (f"Placing ship of size {self.ship_size}.\n"
                 f"Current starting cell: {coords_to_label(*self.cursor)}\n"
-                f"Orientation: {self.orientation} {CURSOR_EMOJIS[self.orientation]}\n"
-                "Use arrow buttons to move, rotate to change orientation, or confirm to place the ship.\n"
+                "Use arrow buttons to move, rotate to change orientation, or press Place Ship to place your ship.\n"
                 "Use the Remove button to reposition if needed.")
         embed = await create_embed("Battleship - Ship Placement", text + "\n\n" + board_str)
         await interaction.response.edit_message(embed=embed, view=self)
@@ -267,8 +279,8 @@ class ShipPlacementGridView(discord.ui.View):
         self.orientation = ORIENTATIONS[(current_index + 1) % len(ORIENTATIONS)]
         await self.update_message(interaction)
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.success, emoji="✅")
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Place Ship", style=discord.ButtonStyle.success, emoji="✅")
+    async def place_ship(self, interaction: discord.Interaction, button: discord.ui.Button):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.ship_size, self.orientation)
         if coords is None:
@@ -289,16 +301,19 @@ class ShipPlacementGridView(discord.ui.View):
             await interaction.response.send_message("No ship of that size to remove.", ephemeral=True)
         await self.update_message(interaction)
 
-class StartGameView(discord.ui.View):
-    """View with a Start button that locks in the player's board."""
-    def __init__(self):
+class FinishBattlefieldView(discord.ui.View):
+    """View with a Finish Battlefield button that locks in the player's board and notifies the channel."""
+    def __init__(self, bot):
         super().__init__(timeout=300)
-        self.started = False
+        self.bot = bot
+        self.finished = False
 
-    @discord.ui.button(label="Start", style=discord.ButtonStyle.success)
-    async def start(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.started = True
-        await interaction.response.send_message("Board locked. Waiting for other players to start...", ephemeral=True)
+    @discord.ui.button(label="Finish Battlefield", style=discord.ButtonStyle.success)
+    async def finish(self, interaction: discord.Interaction, button: discord.ui.Button):
+        channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
+        await channel.send(f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.")
+        self.finished = True
+        await interaction.response.send_message("Finished placing ships. Waiting for the other player...", ephemeral=True)
         self.stop()
 
 # --- Battleship Cog ---
@@ -342,13 +357,20 @@ class Battleship(commands.Cog):
             size_p1 = size_p1 if size_p1 == size else size
             size_p2 = size_p2 if size_p2 == size else size
 
-            # Interactive ship placement:
-            placement_prompt = await create_embed("Battleship - Ship Placement", f"Place your ship of size {size}. Use the grid below.")
+            # Prepare the initial board display with emoji labels.
+            board_p1 = game.board1 if ctx.author == game.player1 else game.board2
+            board_p2 = game.board1 if opponent == game.player1 else game.board2
+            cursor_data = ((0, 0), CURSOR_EMOJIS["right"])
+            board_str_p1 = game.placement_board_to_string(board_p1, cursor_data=cursor_data)
+            board_str_p2 = game.placement_board_to_string(board_p2, cursor_data=cursor_data)
+            placement_text = f"Place your ship of size {size}. Use the grid below."
+            placement_prompt_p1 = await create_embed("Battleship - Ship Placement", placement_text + "\n\n" + board_str_p1)
+            placement_prompt_p2 = await create_embed("Battleship - Ship Placement", placement_text + "\n\n" + board_str_p2)
             placement_view1 = ShipPlacementGridView(game, ctx.author, size_p1)
             placement_view2 = ShipPlacementGridView(game, opponent, size_p2)
             try:
-                await ctx.author.send(embed=placement_prompt, view=placement_view1)
-                await opponent.send(embed=placement_prompt, view=placement_view2)
+                await ctx.author.send(embed=placement_prompt_p1, view=placement_view1)
+                await opponent.send(embed=placement_prompt_p2, view=placement_view2)
             except Exception:
                 await ctx.send("Could not send DM for ship placement. Please ensure your DMs are open.")
                 return
@@ -362,16 +384,16 @@ class Battleship(commands.Cog):
         summary_embed = await create_embed("Battleship - Boards Locked", board_summary_p1 + "\n" + board_summary_p2, color=discord.Color.purple())
         await channel.send(embed=summary_embed)
 
-        # Now, send a Start button to each player to lock in their board and signal readiness.
-        start_view1 = StartGameView()
-        start_view2 = StartGameView()
+        # Now, send a Finish Battlefield button to each player to signal they are done.
+        finish_view1 = FinishBattlefieldView(self.bot)
+        finish_view2 = FinishBattlefieldView(self.bot)
         try:
-            await ctx.author.send(embed=await create_embed("Battleship - Start", "Press Start when you are ready to begin firing."), view=start_view1)
-            await opponent.send(embed=await create_embed("Battleship - Start", "Press Start when you are ready to begin firing."), view=start_view2)
+            await ctx.author.send(embed=await create_embed("Battleship - Finish Battlefield", "Press Finish Battlefield when you have finished placing your ships."), view=finish_view1)
+            await opponent.send(embed=await create_embed("Battleship - Finish Battlefield", "Press Finish Battlefield when you have finished placing your ships."), view=finish_view2)
         except Exception:
-            await ctx.send("Could not send DM for starting the game. Please ensure your DMs are open.")
+            await ctx.send("Could not send DM for finishing the game. Please ensure your DMs are open.")
             return
-        while not (start_view1.started and start_view2.started):
+        while not (finish_view1.finished and finish_view2.finished):
             await asyncio.sleep(1)
 
         # Transition to firing phase.
