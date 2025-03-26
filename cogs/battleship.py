@@ -11,7 +11,7 @@ from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL
 EMPTY_CELL = "⬜"       # Open ocean
 SHIP_CELL = "🟩"        # Placed ship cell during placement
 HIT_CELL = "🟥"         # Ship hit
-MISS_CELL = "🟦"        # Miss (blue square)
+MISS_CELL = "🟦"        # Miss (blue square) – also used for header alignment
 
 # Arrow emojis used as cursor; also indicate orientation.
 CURSOR_EMOJIS = {
@@ -128,7 +128,7 @@ class BattleshipGame:
 
     def board_to_string(self, board):
         """Return a string representation of a board with emoji labels."""
-        header = "   " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
+        header = "🟦 " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
         s = header
         for i, row in enumerate(board):
             s += LETTER_EMOJIS[ROWS[i]] + "  " + " ".join(row) + "\n"
@@ -148,7 +148,7 @@ class BattleshipGame:
                 else:
                     row_disp.append(board[r][c])
             display.append(row_disp)
-        header = "   " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
+        header = "🟦 " + " ".join(NUMBER_EMOJIS[c] for c in COLUMNS) + "\n"
         s = header
         for i, row in enumerate(display):
             s += LETTER_EMOJIS[ROWS[i]] + "  " + " ".join(row) + "\n"
@@ -188,61 +188,54 @@ class BattleshipGame:
             shot_board[row][col] = MISS_CELL
         return "hit" if hit else "miss"
 
-# --- UI Views ---
+# --- Persistent Ship Placement UI ---
 
-class ShipSizeView(discord.ui.View):
-    """Allows a player to select a ship size via buttons."""
-    def __init__(self):
-        super().__init__(timeout=300)
-        self.selected_size = None
+class ShipSizeSelect(discord.ui.Select):
+    def __init__(self, available_ships):
+        options = [
+            discord.SelectOption(label=f"Ship Size {size}", value=str(size))
+            for size in available_ships
+        ]
+        super().__init__(placeholder="Select a ship to place", min_values=1, max_values=1, options=options)
 
-    @discord.ui.button(label="2", style=discord.ButtonStyle.secondary)
-    async def size2(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.selected_size = 2
-        await interaction.response.send_message("Ship size 2 selected.", ephemeral=True)
-        self.stop()
+    async def callback(self, interaction: discord.Interaction):
+        view: PersistentShipPlacementView = self.view
+        view.current_ship_size = int(self.values[0])
+        await view.update_message(interaction)
 
-    @discord.ui.button(label="3", style=discord.ButtonStyle.secondary)
-    async def size3(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.selected_size = 3
-        await interaction.response.send_message("Ship size 3 selected.", ephemeral=True)
-        self.stop()
-
-    @discord.ui.button(label="4", style=discord.ButtonStyle.secondary)
-    async def size4(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.selected_size = 4
-        await interaction.response.send_message("Ship size 4 selected.", ephemeral=True)
-        self.stop()
-
-    @discord.ui.button(label="5", style=discord.ButtonStyle.secondary)
-    async def size5(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.selected_size = 5
-        await interaction.response.send_message("Ship size 5 selected.", ephemeral=True)
-        self.stop()
-
-class ShipPlacementGridView(discord.ui.View):
+class PersistentShipPlacementView(discord.ui.View):
     """
-    Interactive grid for ship placement.
-    The cursor is shown as an arrow emoji reflecting the current orientation.
+    A persistent view for ship placement.
+    It includes a dropdown to select which ship (by size) to place,
+    arrow buttons, rotate, place ship and remove buttons.
+    The board display updates dynamically.
     """
-    def __init__(self, game: BattleshipGame, player: discord.Member, ship_size: int):
+    def __init__(self, game: BattleshipGame, player: discord.Member):
         super().__init__(timeout=300)
         self.game = game
         self.player = player
-        self.ship_size = ship_size
         self.cursor = (0, 0)
         self.orientation = "right"
-        self.message = None
+        self.available_ships = list(game.ship_sizes)  # ships not yet placed
+        self.current_ship_size = None  # currently selected ship size
+        # Add the select menu if there are available ships.
+        if self.available_ships:
+            self.add_item(ShipSizeSelect(self.available_ships))
 
     async def update_message(self, interaction: discord.Interaction):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         cursor_data = (self.cursor, CURSOR_EMOJIS[self.orientation])
         board_str = self.game.placement_board_to_string(board, cursor_data=cursor_data)
-        text = (f"Placing ship of size {self.ship_size}.\n"
+        if self.current_ship_size:
+            header = f"Placing ship of size {self.current_ship_size}.\n"
+        else:
+            header = "Select a ship size to place from the dropdown below.\n"
+        text = (header +
                 f"Current starting cell: {coords_to_label(*self.cursor)}\n"
                 "Use arrow buttons to move, rotate to change orientation, or press Place Ship to place your ship.\n"
-                "Use the Remove button to reposition if needed.")
-        embed = await create_embed("Battleship - Ship Placement", text + "\n\n" + board_str)
+                "Use the Remove button to reposition if needed.\n\n" +
+                board_str)
+        embed = await create_embed("Battleship - Ship Placement", text)
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Up", style=discord.ButtonStyle.secondary)
@@ -281,25 +274,51 @@ class ShipPlacementGridView(discord.ui.View):
 
     @discord.ui.button(label="Place Ship", style=discord.ButtonStyle.success, emoji="✅")
     async def place_ship(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self.current_ship_size:
+            await interaction.response.send_message("Please select a ship size first.", ephemeral=True)
+            return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
-        coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.ship_size, self.orientation)
+        coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.current_ship_size, self.orientation)
         if coords is None:
             await interaction.response.send_message("Invalid placement: Out of bounds or overlapping.", ephemeral=True)
             return
-        self.game.place_ship(self.player, self.ship_size, coords)
-        self.game.placement_ready[self.player] = True
-        await interaction.response.send_message(f"Ship of size {self.ship_size} placed at {coords_to_label(*self.cursor)} facing {self.orientation}.", ephemeral=True)
-        self.stop()
+        self.game.place_ship(self.player, self.current_ship_size, coords)
+        # Remove the placed ship size from available ships and reset current_ship_size
+        if self.current_ship_size in self.available_ships:
+            self.available_ships.remove(self.current_ship_size)
+        self.current_ship_size = None
+        # Remove and re-add the select menu if available ships remain
+        self.clear_items()
+        if self.available_ships:
+            self.add_item(ShipSizeSelect(self.available_ships))
+        else:
+            # All ships placed; mark placement ready and disable further interactions.
+            self.game.placement_ready[self.player] = True
+            self.stop()
+        await self.update_message(interaction)
 
     @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, emoji="❌")
     async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
-        removed = self.game.remove_ship(self.player, self.ship_size)
+        if not self.current_ship_size:
+            await interaction.response.send_message("Select the ship size you want to remove.", ephemeral=True)
+            return
+        board = self.game.board1 if self.player == self.game.player1 else self.game.board2
+        removed = self.game.remove_ship(self.player, self.current_ship_size)
         if removed:
-            self.game.placement_ready[self.player] = False
-            await interaction.response.send_message(f"Ship of size {self.ship_size} removed. You may reposition it.", ephemeral=True)
+            # Add back the removed ship size if not already available.
+            if self.current_ship_size not in self.available_ships:
+                self.available_ships.append(self.current_ship_size)
+                self.available_ships.sort()
+            await interaction.response.send_message(f"Ship of size {self.current_ship_size} removed.", ephemeral=True)
         else:
             await interaction.response.send_message("No ship of that size to remove.", ephemeral=True)
+        self.current_ship_size = None
+        self.clear_items()
+        if self.available_ships:
+            self.add_item(ShipSizeSelect(self.available_ships))
         await self.update_message(interaction)
+
+# --- Finish Battlefield View ---
 
 class FinishBattlefieldView(discord.ui.View):
     """View with a Finish Battlefield button that locks in the player's board and notifies the channel."""
@@ -336,60 +355,41 @@ class Battleship(commands.Cog):
         key = tuple(sorted([ctx.author.id, opponent.id]))
         self.games[key] = game
 
-        # For each ship size, let each player select and place their ship via DM.
-        for size in game.ship_sizes:
-            game.placement_ready[ctx.author] = False
-            game.placement_ready[opponent] = False
+        # Send one persistent ship placement DM to each player.
+        try:
+            placement_embed = await create_embed("Battleship - Ship Placement",
+                "Select a ship size to place from the dropdown below.")
+            view1 = PersistentShipPlacementView(game, ctx.author)
+            view2 = PersistentShipPlacementView(game, opponent)
+            await ctx.author.send(embed=placement_embed, view=view1)
+            await opponent.send(embed=placement_embed, view=view2)
+        except Exception:
+            await ctx.send("Could not send DM for ship placement. Please ensure your DMs are open.")
+            return
 
-            # Ship size selection:
-            size_prompt = await create_embed("Battleship - Ship Size Selection", f"Select the ship size for your ship (should be {size}).")
-            size_view1 = ShipSizeView()
-            size_view2 = ShipSizeView()
-            try:
-                await ctx.author.send(embed=size_prompt, view=size_view1)
-                await opponent.send(embed=size_prompt, view=size_view2)
-            except Exception:
-                await ctx.send("Could not send DM for ship size selection. Please ensure your DMs are open.")
-                return
-            await asyncio.sleep(5)
-            size_p1 = size_view1.selected_size or size
-            size_p2 = size_view2.selected_size or size
-            size_p1 = size_p1 if size_p1 == size else size
-            size_p2 = size_p2 if size_p2 == size else size
-
-            # Prepare the initial board display with emoji labels.
-            board_p1 = game.board1 if ctx.author == game.player1 else game.board2
-            board_p2 = game.board1 if opponent == game.player1 else game.board2
-            cursor_data = ((0, 0), CURSOR_EMOJIS["right"])
-            board_str_p1 = game.placement_board_to_string(board_p1, cursor_data=cursor_data)
-            board_str_p2 = game.placement_board_to_string(board_p2, cursor_data=cursor_data)
-            placement_text = f"Place your ship of size {size}. Use the grid below."
-            placement_prompt_p1 = await create_embed("Battleship - Ship Placement", placement_text + "\n\n" + board_str_p1)
-            placement_prompt_p2 = await create_embed("Battleship - Ship Placement", placement_text + "\n\n" + board_str_p2)
-            placement_view1 = ShipPlacementGridView(game, ctx.author, size_p1)
-            placement_view2 = ShipPlacementGridView(game, opponent, size_p2)
-            try:
-                await ctx.author.send(embed=placement_prompt_p1, view=placement_view1)
-                await opponent.send(embed=placement_prompt_p2, view=placement_view2)
-            except Exception:
-                await ctx.send("Could not send DM for ship placement. Please ensure your DMs are open.")
-                return
-            while not (game.placement_ready[ctx.author] and game.placement_ready[opponent]):
-                await asyncio.sleep(1)
+        # Wait until both players have finished placing all ships.
+        while not (game.placement_ready[ctx.author] and game.placement_ready[opponent]):
+            await asyncio.sleep(1)
 
         # After all ships are placed, send an embed to BATTLESHIP_CHANNEL indicating boards are locked.
         channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
         board_summary_p1 = f"{ctx.author.mention}'s board is locked in."
         board_summary_p2 = f"{opponent.mention}'s board is locked in."
-        summary_embed = await create_embed("Battleship - Boards Locked", board_summary_p1 + "\n" + board_summary_p2, color=discord.Color.purple())
+        summary_embed = await create_embed("Battleship - Boards Locked",
+                                           board_summary_p1 + "\n" + board_summary_p2,
+                                           color=discord.Color.purple())
         await channel.send(embed=summary_embed)
 
         # Now, send a Finish Battlefield button to each player to signal they are done.
         finish_view1 = FinishBattlefieldView(self.bot)
         finish_view2 = FinishBattlefieldView(self.bot)
         try:
-            await ctx.author.send(embed=await create_embed("Battleship - Finish Battlefield", "Press Finish Battlefield when you have finished placing your ships."), view=finish_view1)
-            await opponent.send(embed=await create_embed("Battleship - Finish Battlefield", "Press Finish Battlefield when you have finished placing your ships."), view=finish_view2)
+            await ctx.author.send(embed=await create_embed("Battleship - Finish Battlefield",
+                                                            "Press Finish Battlefield when you have finished placing your ships."),
+                                    view=finish_view1)
+            await opponent.send(embed=await create_embed("Battleship - Finish Battlefield",
+                                                          "Press Finish Battlefield when you have finished placing your ships."),
+                                view=finish_view2)
         except Exception:
             await ctx.send("Could not send DM for finishing the game. Please ensure your DMs are open.")
             return
