@@ -222,6 +222,19 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.available_ships:
             self.add_item(ShipSizeSelect(self.available_ships))
 
+    async def update_select_menu(self):
+        # Update only the select menu's options without clearing other buttons.
+        for child in self.children:
+            if isinstance(child, ShipSizeSelect):
+                if self.available_ships:
+                    child.options = [
+                        discord.SelectOption(label=f"Ship Size {size}", value=str(size))
+                        for size in sorted(self.available_ships)
+                    ]
+                    child.disabled = False
+                else:
+                    child.disabled = True
+
     async def update_message(self, interaction: discord.Interaction):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         cursor_data = (self.cursor, CURSOR_EMOJIS[self.orientation])
@@ -283,15 +296,12 @@ class PersistentShipPlacementView(discord.ui.View):
             await interaction.response.send_message("Invalid placement: Out of bounds or overlapping.", ephemeral=True)
             return
         self.game.place_ship(self.player, self.current_ship_size, coords)
-        # Remove the placed ship size from available ships and reset current_ship_size
         if self.current_ship_size in self.available_ships:
             self.available_ships.remove(self.current_ship_size)
         self.current_ship_size = None
-        # Rebuild the select menu regardless of available ships (buttons remain persistent)
-        self.clear_items()
-        if self.available_ships:
-            self.add_item(ShipSizeSelect(self.available_ships))
-        else:
+        await self.update_select_menu()
+        # If no ships remain, mark placement as ready but do not disable arrow buttons.
+        if not self.available_ships:
             self.game.placement_ready[self.player] = True
         await self.update_message(interaction)
 
@@ -310,9 +320,7 @@ class PersistentShipPlacementView(discord.ui.View):
         else:
             await interaction.response.send_message("No ship of that size to remove.", ephemeral=True)
         self.current_ship_size = None
-        self.clear_items()
-        if self.available_ships:
-            self.add_item(ShipSizeSelect(self.available_ships))
+        await self.update_select_menu()
         await self.update_message(interaction)
 
 # --- Finish Battlefield View ---
