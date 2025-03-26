@@ -287,14 +287,12 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size in self.available_ships:
             self.available_ships.remove(self.current_ship_size)
         self.current_ship_size = None
-        # Remove and re-add the select menu if available ships remain
+        # Rebuild the select menu regardless of available ships (buttons remain persistent)
         self.clear_items()
         if self.available_ships:
             self.add_item(ShipSizeSelect(self.available_ships))
         else:
-            # All ships placed; mark placement ready and disable further interactions.
             self.game.placement_ready[self.player] = True
-            self.stop()
         await self.update_message(interaction)
 
     @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, emoji="❌")
@@ -305,7 +303,6 @@ class PersistentShipPlacementView(discord.ui.View):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         removed = self.game.remove_ship(self.player, self.current_ship_size)
         if removed:
-            # Add back the removed ship size if not already available.
             if self.current_ship_size not in self.available_ships:
                 self.available_ships.append(self.current_ship_size)
                 self.available_ships.sort()
