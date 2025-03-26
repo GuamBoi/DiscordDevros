@@ -6,7 +6,6 @@ import random
 from config import GAME_WIN, GAME_LOSE, ECONOMY_FOLDER, WORDLE_CHANNEL
 from utils import economy
 from utils.embed import create_embed
-from utils.llm_api import query_llm_with_prompt
 
 MAX_ATTEMPTS = 6
 WORDLE_WORDS_FILE = os.path.join('data', 'wordle_words.txt')
@@ -18,15 +17,6 @@ def ensure_wordle_file():
     if not os.path.exists(WORDLE_WORDS_FILE):
         with open(WORDLE_WORDS_FILE, 'w') as f:
             pass
-
-def add_word_to_file(word):
-    ensure_wordle_file()
-    with open(WORDLE_WORDS_FILE, 'r') as f:
-        words = {line.strip() for line in f}
-    if word not in words:
-        with open(WORDLE_WORDS_FILE, 'a') as f:
-            f.write(f"{word}\n")
-            print(f"Word '{word}' added to Wordle Words file.")
 
 def get_random_word_from_file():
     ensure_wordle_file()
@@ -63,17 +53,12 @@ class Wordle(commands.Cog):
         await ctx.message.delete()
         username = ctx.author.name
 
-        word = (await query_llm_with_prompt("wordle_prompt", ctx)).strip().lower()
-        print(f"Generated word: {word}")
-
-        if word and len(word) == 5:
-            add_word_to_file(word)
-        else:
-            word = get_random_word_from_file()
-            if not word:
-                await ctx.send(f"{ctx.author.mention} Failed to generate a valid word. Please try again later.")
-                return
-            print(f"Using fallback word: {word}")
+        # Get a random word from the file
+        word = get_random_word_from_file()
+        if not word:
+            await ctx.send(f"{ctx.author.mention} No valid word available. Please add some 5-letter words to the file.")
+            return
+        print(f"Selected word: {word}")
 
         channel = self.bot.get_channel(WORDLE_CHANNEL)
         embed = await create_embed("Wordle Game", f"A new Wordle game has started! You have {MAX_ATTEMPTS} attempts to guess the word.")
@@ -122,6 +107,9 @@ class Wordle(commands.Cog):
 
     @commands.command(name="wordle_leaderboard")
     async def wordle_leaderboard(self, ctx):
+        # Delete the command message to keep the channel clean
+        await ctx.message.delete()
+        
         streaks = []
         for filename in os.listdir(ECONOMY_FOLDER):
             if filename.endswith(".json"):
