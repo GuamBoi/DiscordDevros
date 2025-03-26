@@ -51,5 +51,5 @@ class EconomyAward(commands.Cog):
         # Confirm the action to the moderator.
         await ctx.send(f"{member.mention} has been awarded **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}**.")
 
-def setup(bot):
-    bot.add_cog(EconomyAward(bot))
+async def setup(bot):
+    await bot.add_cog(EconomyAward(bot))
