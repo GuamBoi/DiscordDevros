@@ -65,6 +65,8 @@ class BattleshipGame:
         self.phase = "placement"  # or "firing"
         self.current_turn = None  # For firing phase
         self.prompt_message = None  # Persistent turn prompt message in BATTLESHIP_CHANNEL
+        # Track sunk ships so they are announced only once.
+        self.sunk_ships = {self.player1: [], self.player2: []}
 
     def can_place_ship(self, board, start_row, start_col, ship_size, orientation):
         """Return list of coordinates if ship placement is valid; else None."""
@@ -242,7 +244,11 @@ class FinishBattlefieldButton(discord.ui.Button):
                 return
         self.parent_view.game.placement_ready[self.parent_view.player] = True
         channel = self.parent_view.bot.get_channel(BATTLESHIP_CHANNEL)
-        await channel.send(f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.")
+        # Send an embed announcing that this player has finished placing ships.
+        finish_embed = await create_embed("Battleship - Ship Placement Complete",
+                                          f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.",
+                                          color=discord.Color.blue())
+        await channel.send(embed=finish_embed)
         try:
             if not interaction.response.is_done():
                 await interaction.response.send_message("Finished placing ships. Waiting for the other player...", ephemeral=True)
@@ -436,6 +442,23 @@ class Battleship(commands.Cog):
                 if result not in ["hit", "miss"]:
                     await ctx.send(result)
                     return
+
+                # If the shot was a hit, check if any ship was sunk.
+                if result == "hit":
+                    opponent = game.player2 if ctx.author == game.player1 else game.player1
+                    opp_board = game.board2 if ctx.author == game.player1 else game.board1
+                    opponent_ships = game.ships2 if ctx.author == game.player1 else game.ships1
+                    sunk_list = game.sunk_ships[opponent]
+                    for size, ships in opponent_ships.items():
+                        for ship in ships:
+                            if ship not in sunk_list:
+                                if all(opp_board[r][c] == HIT_CELL for r, c in ship):
+                                    sunk_list.append(ship)
+                                    embed = await create_embed("Battleship - Ship Sunk",
+                                                               f"{ctx.author.mention} has sunk {opponent.mention}'s ship of size {size}!",
+                                                               color=discord.Color.red())
+                                    channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
+                                    await channel.send(embed=embed)
                 # Check for win condition.
                 if self.check_win(game):
                     winner = ctx.author
