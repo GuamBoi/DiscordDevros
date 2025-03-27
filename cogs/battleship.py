@@ -55,7 +55,6 @@ class BattleshipGame:
         self.shots1 = [[EMPTY_CELL for _ in range(10)] for _ in range(10)]
         self.shots2 = [[EMPTY_CELL for _ in range(10)] for _ in range(10)]
         # Ships placed: dictionary mapping ship size to list(s) of coordinates.
-        # For ships that can have multiple copies (like the 3-cell ship), we store a list per size.
         self.ships1 = {}  
         self.ships2 = {}
         # Each player must place one ship for each of these sizes.
@@ -409,33 +408,18 @@ class Battleship(commands.Cog):
         while not (game.placement_ready[ctx.author] and game.placement_ready[opponent]):
             await asyncio.sleep(1)
 
-        # After all ships are placed, send an embed to BATTLESHIP_CHANNEL indicating boards are locked.
-        channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-        board_summary_p1 = f"{ctx.author.mention}'s board is locked in."
-        board_summary_p2 = f"{opponent.mention}'s board is locked in."
-        summary_embed = await create_embed("Battleship - Boards Locked",
-                                           board_summary_p1 + "\n" + board_summary_p2,
-                                           color=discord.Color.purple())
-        await channel.send(embed=summary_embed)
-
-        # Transition to firing phase.
+        # Transition to firing phase in the battleship channel.
         game.phase = "firing"
         game.current_turn = ctx.author  # Let challenger start
 
-        # Send each player their boards via DM.
+        # Send each player their boards via DM (removed the Shots Taken embeds).
         board_embed1 = await create_embed("Battleship - Your Board", game.board_to_string(game.board1))
         board_embed2 = await create_embed("Battleship - Your Board", game.board_to_string(game.board2))
-        shot_embed1 = await create_embed("Battleship - Shots Taken", game.board_to_string(game.shots1))
-        shot_embed2 = await create_embed("Battleship - Shots Taken", game.board_to_string(game.shots2))
         await ctx.author.send(embed=board_embed1)
-        await ctx.author.send(embed=shot_embed1)
         await opponent.send(embed=board_embed2)
-        await opponent.send(embed=shot_embed2)
 
         # Create the persistent turn prompt in BATTLESHIP_CHANNEL.
         await update_turn_prompt(game, self.bot)
-
-        await ctx.send("Battleship game started! Use !fire <cell> (e.g. !fire A1) to take your turn.")
 
     @commands.command(name="fire")
     async def fire(self, ctx, target: str):
@@ -468,8 +452,10 @@ class Battleship(commands.Cog):
                     await ctx.send(f"{winner.mention} wins the Battleship game!")
                     del self.games[key]
                     return
-                # Switch turn and update the prompt.
-                game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
+                # If the result is a hit, allow the same player to shoot again.
+                # Otherwise (miss), switch turn.
+                if result == "miss":
+                    game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
                 await update_turn_prompt(game, self.bot)
                 return
         await ctx.send("No active Battleship game found for you.")
