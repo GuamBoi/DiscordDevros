@@ -66,6 +66,12 @@
         "LLM_Context": "The `balance` command can be used by any member to check the amount of {CURRENCY_NAME} they own on the server. It also displays their Wordle and Connect 4 streak"
     },
     {
+        "Command_Name": "give",
+        "Description": "Give another member some of your {CURRENCY_NAME}",
+        "Example": "!give <amount> @{BOT_NAME} <optional_reason>",
+        "LLM_Context": "The `give` command gives the specified member the amount of {CURRENCY_NAME} from the members balance that used the command Users can provide a Reason that will be included in the bots embed send to the server explaining the transaction."
+    },
+    {
         "Command_Name": "leaderboard",
         "Description": "Displays top 10 members with the highest {CURRENCY_NAME} balance",
         "Example": "{COMMAND_PREFIX}leaderboard",
@@ -100,5 +106,17 @@
         "Description": "Starts a Connect 4 game with another server member",
         "Example": "!connect4 @{BOT_NAME}",
         "LLM_Context": "The `connect4` command starts a Connect 4 game with the server member tagged at the end of the command."
+    },
+    {
+        "Command_Name": "battleship",
+        "Description": "Starts a Battleship game with another server member",
+        "Example": "!battleship @{BOT_NAME}",
+        "LLM_Context": "The `battleship` command starts a Battleship game with the server member tagged at the end of the command."
+    },
+    {
+        "Command_Name": "fire",
+        "Description": "Shoots a shot at the specified battleship coordinate.",
+        "Example": "!fire A1",
+        "LLM_Context": "The `fire` command shoots a shot at the specified ccoordinate at your opponents board."
     }
 ]
