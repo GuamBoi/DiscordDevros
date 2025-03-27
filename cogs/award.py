@@ -15,13 +15,16 @@ class EconomyAward(commands.Cog):
         Award currency to a server member.
         Usage: award <amount> @User <optional reason>
         """
+        # Delete the command message
+        await ctx.message.delete()
+
         # Check that the awarded amount does not exceed the allowed limit.
         if amount > DEFAULT_CURRENCY_GIVE:
             # Create an embed for the error message.
             embed = discord.Embed(
                 title="Award Limit Exceeded",
                 description=f"You cannot award more than {CURRENCY_SYMBOL}{DEFAULT_CURRENCY_GIVE} {CURRENCY_NAME}.",
-                color=discord.Color.red()  # Set embed color to red for error
+                color=discord.Color.red()
             )
             await ctx.send(embed=embed)
             return
@@ -32,7 +35,8 @@ class EconomyAward(commands.Cog):
         # Build the embed message for the successful award.
         title = "Currency Awarded!"
         description = (
-            f"{ctx.author.mention} awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.\n"
+            f"{ctx.author.mention} awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.
+"
             f"New balance for {member.mention}: **{CURRENCY_SYMBOL}{new_balance}**."
         )
         if reason:
@@ -40,11 +44,7 @@ class EconomyAward(commands.Cog):
         
         # Create the embed for the award message.
         embed_result = create_embed(title, description)
-        # If the result is awaitable, await it.
-        if hasattr(embed_result, '__await__'):
-            embed = await embed_result
-        else:
-            embed = embed_result
+        embed = await embed_result if hasattr(embed_result, '__await__') else embed_result
         
         # Get the designated channel.
         channel = self.bot.get_channel(BETTING_CHANNEL)
@@ -53,9 +53,6 @@ class EconomyAward(commands.Cog):
         else:
             # Fallback: send in the current channel if BETTING_CHANNEL isn't found.
             await ctx.send(embed=embed)
-        
-        # Confirm the action to the moderator.
-        await ctx.send(f"{member.mention} has been awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}**.")
 
     @award.error
     async def award_error(self, ctx, error):
