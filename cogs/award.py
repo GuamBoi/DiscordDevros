@@ -17,22 +17,28 @@ class EconomyAward(commands.Cog):
         """
         # Check that the awarded amount does not exceed the allowed limit.
         if amount > DEFAULT_CURRENCY_GIVE:
-            await ctx.send(f"You cannot award more than {DEFAULT_CURRENCY_GIVE} {CURRENCY_NAME} ({CURRENCY_SYMBOL}).")
+            # Create an embed for the error message.
+            embed = discord.Embed(
+                title="Award Limit Exceeded",
+                description=f"You cannot award more than {CURRENCY_SYMBOL}{DEFAULT_CURRENCY_GIVE} {CURRENCY_NAME}.",
+                color=discord.Color.red()  # Set embed color to red for error
+            )
+            await ctx.send(embed=embed)
             return
 
         # Award the currency using the economy utility.
         new_balance = add_currency(member.name, amount)
         
-        # Build the embed message.
+        # Build the embed message for the successful award.
         title = "Currency Awarded!"
         description = (
-            f"{ctx.author.mention} awarded **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}** to {member.mention}.\n"
-            f"New balance for {member.mention}: **{new_balance} {CURRENCY_SYMBOL}**."
+            f"{ctx.author.mention} awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.\n"
+            f"New balance for {member.mention}: **{CURRENCY_SYMBOL}{new_balance}**."
         )
         if reason:
             description += f"\n**Reason:** {reason}"
         
-        # Create the embed.
+        # Create the embed for the award message.
         embed_result = create_embed(title, description)
         # If the result is awaitable, await it.
         if hasattr(embed_result, '__await__'):
@@ -49,7 +55,7 @@ class EconomyAward(commands.Cog):
             await ctx.send(embed=embed)
         
         # Confirm the action to the moderator.
-        await ctx.send(f"{member.mention} has been awarded **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}**.")
+        await ctx.send(f"{member.mention} has been awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}**.")
 
     @award.error
     async def award_error(self, ctx, error):
@@ -57,7 +63,7 @@ class EconomyAward(commands.Cog):
             # Send an embed message to the channel where the command was run
             embed = discord.Embed(
                 title="Permission Denied",
-                description="You need the 'Moderator' role to use that command.",
+                description="You need the **Moderator** role to use that command.",
                 color=discord.Color.red()
             )
             await ctx.send(embed=embed)
