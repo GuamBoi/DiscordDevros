@@ -43,6 +43,7 @@ def coords_to_label(row, col):
     return f"{ROWS[row]}{col+1}"
 
 # --- Battleship Game State Class ---
+
 class BattleshipGame:
     def __init__(self, player1: discord.Member, player2: discord.Member):
         self.player1 = player1
@@ -57,7 +58,7 @@ class BattleshipGame:
         self.ships1 = {}  
         self.ships2 = {}
         # Each player must place ships according to these requirements.
-        # For example, there is one 2-space ship, two 3-space ships, one 4-space, and one 5-space.
+        # For example, one 2‑space, two 3‑space, one 4‑space, and one 5‑space.
         self.ship_requirements = {2: 1, 3: 2, 4: 1, 5: 1}
         # Ready flags for each player's placement phase.
         self.placement_ready = {self.player1: False, self.player2: False}
@@ -204,6 +205,7 @@ async def update_turn_prompt(game: BattleshipGame, bot: discord.Client):
         await game.prompt_message.edit(embed=embed)
 
 # --- Persistent Ship Placement UI ---
+
 class ShipSizeSelect(discord.ui.Select):
     def __init__(self, placed_ships, requirements):
         # Build options based on each ship size, showing placed count vs requirement.
@@ -222,14 +224,9 @@ class ShipSizeSelect(discord.ui.Select):
         if view.placed_ships[size] >= view.game.ship_requirements[size]:
             await interaction.response.send_message(f"All required ships of size {size} are already placed. Use the Remove button to reposition one.", ephemeral=True)
             return
+        # Set the current ship size immediately and defer the response.
         view.current_ship_size = size
-        try:
-            if not interaction.response.is_done():
-                await interaction.response.defer(ephemeral=True)
-            else:
-                await interaction.followup.send("", ephemeral=True)
-        except Exception:
-            pass
+        await interaction.response.defer(ephemeral=True)
         await view.update_message(interaction)
 
 class FinishBattlefieldButton(discord.ui.Button):
@@ -375,6 +372,7 @@ class PersistentShipPlacementView(discord.ui.View):
         await self.update_message(interaction)
 
 # --- Battleship Cog ---
+
 class Battleship(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
