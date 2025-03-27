@@ -9,7 +9,7 @@ class EconomyAward(commands.Cog):
         self.bot = bot
 
     @commands.command(name="award")
-    @commands.has_role("Moderator")
+    @commands.has_role("Moderator")  # Only allows moderators to run this command
     async def award(self, ctx, amount: int, member: discord.Member, *, reason: str = None):
         """
         Award currency to a server member.
@@ -50,6 +50,19 @@ class EconomyAward(commands.Cog):
         
         # Confirm the action to the moderator.
         await ctx.send(f"{member.mention} has been awarded **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}**.")
+
+    @award.error
+    async def award_error(self, ctx, error):
+        if isinstance(error, commands.MissingRole):
+            # Send an embed message to the channel where the command was run
+            embed = discord.Embed(
+                title="Permission Denied",
+                description="You need the 'Moderator' role to use the `!award` command.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            # Delete the user's command message
+            await ctx.message.delete()
 
 async def setup(bot):
     await bot.add_cog(EconomyAward(bot))
