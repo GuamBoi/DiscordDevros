@@ -36,9 +36,9 @@ class EconomyGive(commands.Cog):
         # Build the embed message for the transaction
         title = "Currency Given!"
         description = (
-            f"{ctx.author.mention} gave **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}** to {member.mention}.\n"
-            f"New balance for {ctx.author.mention}: **{new_balance_sender} {CURRENCY_SYMBOL}**.\n"
-            f"New balance for {member.mention}: **{new_balance_receiver} {CURRENCY_SYMBOL}**."
+            f"{ctx.author.mention} gave **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.\n"
+            f"New balance for {ctx.author.mention}: **{CURRENCY_SYMBOL}{new_balance_sender}**.\n"
+            f"New balance for {member.mention}: **{CURRENCY_SYMBOL}{new_balance_receiver}**."
         )
         
         if reason:
@@ -59,7 +59,7 @@ class EconomyGive(commands.Cog):
             await ctx.send(embed=embed)
 
         # Confirm the transaction to the user
-        await ctx.send(f"You gave **{amount} {CURRENCY_SYMBOL} {CURRENCY_NAME}** to {member.mention}.")
+        await ctx.send(f"You gave **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.")
 
 async def setup(bot):
     await bot.add_cog(EconomyGive(bot))
