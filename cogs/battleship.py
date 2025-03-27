@@ -417,7 +417,7 @@ class Battleship(commands.Cog):
         game.phase = "firing"
         game.current_turn = ctx.author  # Let challenger start
 
-        # Send each player their boards via DM (removed the Shots Taken embeds).
+        # Send each player their boards via DM.
         board_embed1 = await create_embed("Battleship - Your Board", game.board_to_string(game.board1))
         board_embed2 = await create_embed("Battleship - Your Board", game.board_to_string(game.board2))
         await ctx.author.send(embed=board_embed1)
@@ -460,8 +460,8 @@ class Battleship(commands.Cog):
                                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
                                     await channel.send(embed=embed)
                 # Check for win condition.
-                if self.check_win(game):
-                    winner = ctx.author
+                winner = self.check_win(game)
+                if winner:
                     loser = game.player1 if winner == game.player2 else game.player2
                     add_currency(winner.name, GAME_WIN)
                     remove_currency(loser.name, GAME_LOSE)
@@ -500,7 +500,10 @@ class Battleship(commands.Cog):
         await ctx.send("No active Battleship game found for you.", delete_after=10)
 
     def check_win(self, game: BattleshipGame):
-        """Check if all ship cells of a player have been hit."""
+        """
+        Check if a player has lost all their ships.
+        Returns the winning player if so, otherwise None.
+        """
         def all_ships_sunk(ships, board):
             for ship_coords_list in ships.values():
                 for coords in ship_coords_list:
@@ -508,11 +511,13 @@ class Battleship(commands.Cog):
                         if board[r][c] != HIT_CELL:
                             return False
             return True
-        if all_ships_sunk(game.ships1, game.board2):
-            return True
-        if all_ships_sunk(game.ships2, game.board1):
-            return True
-        return False
+
+        # For player1, their ships are on board1; for player2, on board2.
+        if all_ships_sunk(game.ships1, game.board1):
+            return game.player2
+        if all_ships_sunk(game.ships2, game.board2):
+            return game.player1
+        return None
 
 async def setup(bot):
     await bot.add_cog(Battleship(bot))
