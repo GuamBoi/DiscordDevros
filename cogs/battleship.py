@@ -43,7 +43,6 @@ def coords_to_label(row, col):
     return f"{ROWS[row]}{col+1}"
 
 # --- Battleship Game State Class ---
-
 class BattleshipGame:
     def __init__(self, player1: discord.Member, player2: discord.Member):
         self.player1 = player1
@@ -57,9 +56,9 @@ class BattleshipGame:
         # Ships placed: dictionary mapping ship size to list(s) of coordinates.
         self.ships1 = {}  
         self.ships2 = {}
-        # Each player must place one ship for each of these sizes.
-        # Fleet now includes two 3-cell ships.
-        self.ship_sizes = [2, 3, 3, 4, 5]
+        # Each player must place ships according to these requirements.
+        # For example, there is one 2-space ship, two 3-space ships, one 4-space, and one 5-space.
+        self.ship_requirements = {2: 1, 3: 2, 4: 1, 5: 1}
         # Ready flags for each player's placement phase.
         self.placement_ready = {self.player1: False, self.player2: False}
         self.phase = "placement"  # or "firing"
@@ -115,7 +114,7 @@ class BattleshipGame:
     def remove_all_ships(self, player: discord.Member):
         """Remove all ships for the given player."""
         removed_any = False
-        for size in self.ship_sizes:
+        for size in self.ship_requirements:
             while self.remove_ship(player, size):
                 removed_any = True
         return removed_any
@@ -204,33 +203,33 @@ async def update_turn_prompt(game: BattleshipGame, bot: discord.Client):
     else:
         await game.prompt_message.edit(embed=embed)
 
-# --- Persistent Ship Placement UI (Unchanged except ship_sizes are updated in game) ---
-
+# --- Persistent Ship Placement UI ---
 class ShipSizeSelect(discord.ui.Select):
-    def __init__(self, placed_ships):
-        # placed_ships is a dict mapping ship_size to bool (True if placed)
+    def __init__(self, placed_ships, requirements):
+        # Build options based on each ship size, showing placed count vs requirement.
         options = []
-        for size in sorted(placed_ships.keys()):
-            label = f"Ship Size {size}"
-            if placed_ships[size]:
-                label += " (Placed)"
+        for size in sorted(requirements.keys()):
+            count = placed_ships[size]
+            req = requirements[size]
+            label = f"Ship Size {size} ({count}/{req} placed)"
             options.append(discord.SelectOption(label=label, value=str(size)))
         super().__init__(placeholder="Select a ship to place or remove", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         view: PersistentShipPlacementView = self.view
         size = int(self.values[0])
+        # Check if this ship size is already fully placed.
+        if view.placed_ships[size] >= view.game.ship_requirements[size]:
+            await interaction.response.send_message(f"All required ships of size {size} are already placed. Use the Remove button to reposition one.", ephemeral=True)
+            return
         view.current_ship_size = size
-        if view.placed_ships[size]:
-            await interaction.response.send_message(f"Ship of size {size} is already placed. Use the Remove button to reposition it.", ephemeral=True)
-        else:
-            try:
-                if not interaction.response.is_done():
-                    await interaction.response.defer(ephemeral=True)
-                else:
-                    await interaction.followup.send("", ephemeral=True)
-            except Exception:
-                pass
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.defer(ephemeral=True)
+            else:
+                await interaction.followup.send("", ephemeral=True)
+        except Exception:
+            pass
         await view.update_message(interaction)
 
 class FinishBattlefieldButton(discord.ui.Button):
@@ -239,9 +238,11 @@ class FinishBattlefieldButton(discord.ui.Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: discord.Interaction):
-        if not all(self.parent_view.placed_ships.values()):
-            await interaction.response.send_message("You must place one ship of each size before finishing.", ephemeral=True)
-            return
+        # Ensure for each ship size the placed count meets the requirement.
+        for size, req in self.parent_view.game.ship_requirements.items():
+            if self.parent_view.placed_ships[size] < req:
+                await interaction.response.send_message(f"You must place {req} ship(s) of size {size}.", ephemeral=True)
+                return
         self.parent_view.game.placement_ready[self.parent_view.player] = True
         channel = self.parent_view.bot.get_channel(BATTLESHIP_CHANNEL)
         await channel.send(f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.")
@@ -262,19 +263,19 @@ class PersistentShipPlacementView(discord.ui.View):
         self.bot = game.player1.guild if hasattr(game.player1, "guild") else None
         self.cursor = (0, 0)
         self.orientation = "right"
-        self.placed_ships = {size: False for size in game.ship_sizes}
+        # Instead of a boolean flag per ship size, track count placed.
+        self.placed_ships = {size: 0 for size in game.ship_requirements}
         self.current_ship_size = None
-        self.add_item(ShipSizeSelect(self.placed_ships))
+        self.add_item(ShipSizeSelect(self.placed_ships, game.ship_requirements))
         self.add_item(FinishBattlefieldButton(self))
 
     async def update_select_menu(self):
         for child in self.children:
             if isinstance(child, ShipSizeSelect):
                 new_options = []
-                for size in sorted(self.placed_ships.keys()):
-                    label = f"Ship Size {size}"
-                    if self.placed_ships[size]:
-                        label += " (Placed)"
+                for size, req in self.game.ship_requirements.items():
+                    count = self.placed_ships[size]
+                    label = f"Ship Size {size} ({count}/{req} placed)"
                     new_options.append(discord.SelectOption(label=label, value=str(size)))
                 child.options = new_options
 
@@ -339,8 +340,9 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size is None:
             await interaction.response.send_message("Please select a ship size first.", ephemeral=True)
             return
-        if self.placed_ships[self.current_ship_size]:
-            await interaction.response.send_message(f"Ship of size {self.current_ship_size} is already placed. Remove it to reposition.", ephemeral=True)
+        # Check if we can still place another ship of this size.
+        if self.placed_ships[self.current_ship_size] >= self.game.ship_requirements[self.current_ship_size]:
+            await interaction.response.send_message(f"All required ships of size {self.current_ship_size} are already placed.", ephemeral=True)
             return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.current_ship_size, self.orientation)
@@ -348,7 +350,7 @@ class PersistentShipPlacementView(discord.ui.View):
             await interaction.response.send_message("Invalid placement: Out of bounds or overlapping.", ephemeral=True)
             return
         self.game.place_ship(self.player, self.current_ship_size, coords)
-        self.placed_ships[self.current_ship_size] = True
+        self.placed_ships[self.current_ship_size] += 1
         self.current_ship_size = None
         await self.update_select_menu()
         await self.update_message(interaction)
@@ -358,14 +360,14 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size is None:
             await interaction.response.send_message("Select the ship size you want to remove.", ephemeral=True)
             return
-        if not self.placed_ships[self.current_ship_size]:
+        if self.placed_ships[self.current_ship_size] <= 0:
             await interaction.response.send_message(f"No ship of size {self.current_ship_size} is placed.", ephemeral=True)
             return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         removed = self.game.remove_ship(self.player, self.current_ship_size)
         if removed:
-            self.placed_ships[self.current_ship_size] = False
-            await interaction.response.send_message(f"Ship of size {self.current_ship_size} removed.", ephemeral=True)
+            self.placed_ships[self.current_ship_size] -= 1
+            await interaction.response.send_message(f"One ship of size {self.current_ship_size} removed.", ephemeral=True)
         else:
             await interaction.response.send_message("Failed to remove ship.", ephemeral=True)
         self.current_ship_size = None
@@ -373,7 +375,6 @@ class PersistentShipPlacementView(discord.ui.View):
         await self.update_message(interaction)
 
 # --- Battleship Cog ---
-
 class Battleship(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
