@@ -57,7 +57,7 @@ class EconomyAward(commands.Cog):
             # Send an embed message to the channel where the command was run
             embed = discord.Embed(
                 title="Permission Denied",
-                description="You need the 'Moderator' role to use the `!award` command.",
+                description="You need the 'Moderator' role to use that command.",
                 color=discord.Color.red()
             )
             await ctx.send(embed=embed)
