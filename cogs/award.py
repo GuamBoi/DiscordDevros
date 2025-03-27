@@ -35,8 +35,7 @@ class EconomyAward(commands.Cog):
         # Build the embed message for the successful award.
         title = "Currency Awarded!"
         description = (
-            f"{ctx.author.mention} awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.
-"
+            f"{ctx.author.mention} awarded **{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}** to {member.mention}.\n"
             f"New balance for {member.mention}: **{CURRENCY_SYMBOL}{new_balance}**."
         )
         if reason:
