@@ -458,7 +458,8 @@ class Battleship(commands.Cog):
                                                                f"{ctx.author.mention} has sunk {opponent.mention}'s ship of size {size}!",
                                                                color=discord.Color.red())
                                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-                                    await channel.send(embed=embed)
+                                    # Send the sunk ship embed and automatically delete it after 60 seconds.
+                                    await channel.send(embed=embed, delete_after=60)
                 # Check for win condition.
                 winner = self.check_win(game)
                 if winner:
