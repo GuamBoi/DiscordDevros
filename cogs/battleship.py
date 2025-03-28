@@ -2,9 +2,11 @@ import discord
 from discord.ext import commands
 import asyncio
 import re
+
 from utils.embed import create_embed
 from utils.economy import add_currency, remove_currency, load_economy, save_economy
-from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL
+# Make sure you have CURRENCY_SYMBOL in your config.py
+from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL, CURRENCY_SYMBOL
 
 # --- Constants & Helper Functions ---
 
@@ -55,7 +57,7 @@ class BattleshipGame:
         self.shots1 = [[EMPTY_CELL for _ in range(10)] for _ in range(10)]
         self.shots2 = [[EMPTY_CELL for _ in range(10)] for _ in range(10)]
         # Ships placed: dictionary mapping ship size to list(s) of coordinates.
-        self.ships1 = {}  
+        self.ships1 = {}
         self.ships2 = {}
         # Each player must place ships according to these requirements.
         # For example, one 2‑space, two 3‑space, one 4‑space, and one 5‑space.
@@ -103,7 +105,7 @@ class BattleshipGame:
     def remove_ship(self, player: discord.Member, ship_size: int):
         """Remove one placed ship of the given size from the player's board."""
         if player == self.player1 and ship_size in self.ships1 and self.ships1[ship_size]:
-            coords = self.ships1[ship_size].pop()  # Remove the last placed ship of that size
+            coords = self.ships1[ship_size].pop()
             board = self.board1
         elif player == self.player2 and ship_size in self.ships2 and self.ships2[ship_size]:
             coords = self.ships2[ship_size].pop()
@@ -224,7 +226,10 @@ class ShipSizeSelect(discord.ui.Select):
         size = int(self.values[0])
         # Check if this ship size is already fully placed.
         if view.placed_ships[size] >= view.game.ship_requirements[size]:
-            await interaction.response.send_message(f"All required ships of size {size} are already placed. Use the Remove button to reposition one.", ephemeral=True)
+            await interaction.response.send_message(
+                f"All required ships of size {size} are already placed. Use the Remove button to reposition one.",
+                ephemeral=True
+            )
             return
         # Set the current ship size immediately and defer the response.
         view.current_ship_size = size
@@ -240,20 +245,31 @@ class FinishBattlefieldButton(discord.ui.Button):
         # Ensure for each ship size the placed count meets the requirement.
         for size, req in self.parent_view.game.ship_requirements.items():
             if self.parent_view.placed_ships[size] < req:
-                await interaction.response.send_message(f"You must place {req} ship(s) of size {size}.", ephemeral=True)
+                await interaction.response.send_message(
+                    f"You must place {req} ship(s) of size {size}.",
+                    ephemeral=True
+                )
                 return
         self.parent_view.game.placement_ready[self.parent_view.player] = True
         channel = self.parent_view.bot.get_channel(BATTLESHIP_CHANNEL)
         # Send an embed announcing that this player has finished placing ships.
-        finish_embed = await create_embed("Battleship - Ship Placement Complete",
-                                          f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.",
-                                          color=discord.Color.blue())
+        finish_embed = await create_embed(
+            "Battleship - Ship Placement Complete",
+            f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.",
+            color=discord.Color.blue()
+        )
         await channel.send(embed=finish_embed)
         try:
             if not interaction.response.is_done():
-                await interaction.response.send_message("Finished placing ships. Waiting for the other player...", ephemeral=True)
+                await interaction.response.send_message(
+                    "Finished placing ships. Waiting for the other player...",
+                    ephemeral=True
+                )
             else:
-                await interaction.followup.send("Finished placing ships. Waiting for the other player...", ephemeral=True)
+                await interaction.followup.send(
+                    "Finished placing ships. Waiting for the other player...",
+                    ephemeral=True
+                )
         except Exception:
             pass
         self.parent_view.stop()
@@ -290,17 +306,23 @@ class PersistentShipPlacementView(discord.ui.View):
             header = f"Placing ship of size {self.current_ship_size}.\n"
         else:
             header = "Select a ship size to place or remove from the dropdown below.\n"
-        text = (header +
-                f"Current starting cell: {coords_to_label(*self.cursor)}\n"
-                "Use arrow buttons to move, rotate to change orientation, or press Place Ship to place your ship.\n"
-                "Use the Remove button to reposition if needed.\n\n" +
-                board_str)
+        text = (
+            header +
+            f"Current starting cell: {coords_to_label(*self.cursor)}\n"
+            "Use arrow buttons to move, rotate to change orientation, or press Place Ship to place your ship.\n"
+            "Use the Remove button to reposition if needed.\n\n" +
+            board_str
+        )
         embed = await create_embed("Battleship - Ship Placement", text)
         try:
             if not interaction.response.is_done():
                 await interaction.response.edit_message(embed=embed, view=self)
             else:
-                await interaction.followup.edit_message(message_id=interaction.message.id, embed=embed, view=self)
+                await interaction.followup.edit_message(
+                    message_id=interaction.message.id,
+                    embed=embed,
+                    view=self
+                )
         except Exception as e:
             print(e)
 
@@ -345,7 +367,10 @@ class PersistentShipPlacementView(discord.ui.View):
             return
         # Check if we can still place another ship of this size.
         if self.placed_ships[self.current_ship_size] >= self.game.ship_requirements[self.current_ship_size]:
-            await interaction.response.send_message(f"All required ships of size {self.current_ship_size} are already placed.", ephemeral=True)
+            await interaction.response.send_message(
+                f"All required ships of size {self.current_ship_size} are already placed.",
+                ephemeral=True
+            )
             return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.current_ship_size, self.orientation)
@@ -364,13 +389,19 @@ class PersistentShipPlacementView(discord.ui.View):
             await interaction.response.send_message("Select the ship size you want to remove.", ephemeral=True)
             return
         if self.placed_ships[self.current_ship_size] <= 0:
-            await interaction.response.send_message(f"No ship of size {self.current_ship_size} is placed.", ephemeral=True)
+            await interaction.response.send_message(
+                f"No ship of size {self.current_ship_size} is placed.",
+                ephemeral=True
+            )
             return
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         removed = self.game.remove_ship(self.player, self.current_ship_size)
         if removed:
             self.placed_ships[self.current_ship_size] -= 1
-            await interaction.response.send_message(f"One ship of size {self.current_ship_size} removed.", ephemeral=True)
+            await interaction.response.send_message(
+                f"One ship of size {self.current_ship_size} removed.",
+                ephemeral=True
+            )
         else:
             await interaction.response.send_message("Failed to remove ship.", ephemeral=True)
         self.current_ship_size = None
@@ -399,8 +430,10 @@ class Battleship(commands.Cog):
 
         # Send one persistent ship placement DM to each player.
         try:
-            placement_embed = await create_embed("Battleship - Ship Placement",
-                "Select a ship size to place or remove from the dropdown below.")
+            placement_embed = await create_embed(
+                "Battleship - Ship Placement",
+                "Select a ship size to place or remove from the dropdown below."
+            )
             view1 = PersistentShipPlacementView(game, ctx.author)
             view2 = PersistentShipPlacementView(game, opponent)
             await ctx.author.send(embed=placement_embed, view=view1)
@@ -438,6 +471,7 @@ class Battleship(commands.Cog):
                 if ctx.author != game.current_turn:
                     await ctx.send("It is not your turn.")
                     return
+
                 result = game.fire(ctx.author, target)
                 if result not in ["hit", "miss"]:
                     await ctx.send(result)
@@ -449,38 +483,82 @@ class Battleship(commands.Cog):
                     opp_board = game.board2 if ctx.author == game.player1 else game.board1
                     opponent_ships = game.ships2 if ctx.author == game.player1 else game.ships1
                     sunk_list = game.sunk_ships[opponent]
+
                     for size, ships in opponent_ships.items():
                         for ship in ships:
                             if ship not in sunk_list:
                                 if all(opp_board[r][c] == HIT_CELL for r, c in ship):
                                     sunk_list.append(ship)
-                                    embed = await create_embed("Battleship - Ship Sunk",
-                                                               f"{ctx.author.mention} has sunk {opponent.mention}'s ship of size {size}!",
-                                                               color=discord.Color.red())
+                                    embed = await create_embed(
+                                        "Battleship - Ship Sunk",
+                                        f"{ctx.author.mention} has sunk {opponent.mention}'s ship of size {size}!",
+                                        color=discord.Color.red()
+                                    )
                                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-                                    # Send the sunk ship embed and automatically delete it after 60 seconds.
+                                    # Auto-delete the sunk ship announcement after 60 seconds
                                     await channel.send(embed=embed, delete_after=60)
+
                 # Check for win condition.
                 winner = self.check_win(game)
                 if winner:
                     loser = game.player1 if winner == game.player2 else game.player2
+
+                    # Apply currency changes
                     add_currency(winner.name, GAME_WIN)
                     remove_currency(loser.name, GAME_LOSE)
-                    final_board1 = await create_embed("Battleship - Final Board", game.board_to_string(game.board1))
-                    final_board2 = await create_embed("Battleship - Final Board", game.board_to_string(game.board2))
+
+                    # Create a single embed with all final info
                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-                    await channel.send(f"Final Boards for Battleship game between {game.player1.mention} and {game.player2.mention}:")
-                    await channel.send(embed=final_board1)
-                    await channel.send(embed=final_board2)
-                    await ctx.send(f"{winner.mention} wins the Battleship game!")
+                    description_text = (
+                        f"{winner.mention} beat {loser.mention} in Battleship!\n\n"
+                        f"**{winner.display_name}** won {CURRENCY_SYMBOL}{GAME_WIN}\n"
+                        f"**{loser.display_name}** lost {CURRENCY_SYMBOL}{GAME_LOSE}\n\n"
+                        "Their final boards can be seen below:"
+                    )
+                    final_embed = await create_embed(
+                        "Battleship - Game Over",
+                        description_text,
+                        color=discord.Color.blue()
+                    )
+
+                    # Add each player's final board as a field
+                    if winner == game.player1:
+                        final_embed.add_field(
+                            name=f"{winner.display_name}'s Board",
+                            value=game.board_to_string(game.board1),
+                            inline=False
+                        )
+                        final_embed.add_field(
+                            name=f"{loser.display_name}'s Board",
+                            value=game.board_to_string(game.board2),
+                            inline=False
+                        )
+                    else:
+                        final_embed.add_field(
+                            name=f"{winner.display_name}'s Board",
+                            value=game.board_to_string(game.board2),
+                            inline=False
+                        )
+                        final_embed.add_field(
+                            name=f"{loser.display_name}'s Board",
+                            value=game.board_to_string(game.board1),
+                            inline=False
+                        )
+
+                    await channel.send(embed=final_embed)
+
+                    # Remove the game from active games
                     del self.games[key]
                     return
+
                 # If the result is a hit, allow the same player to shoot again.
                 # Otherwise (miss), switch turn.
                 if result == "miss":
                     game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
+
                 await update_turn_prompt(game, self.bot)
                 return
+
         await ctx.send("No active Battleship game found for you.")
 
     @commands.command(name="resetships")
@@ -494,9 +572,15 @@ class Battleship(commands.Cog):
                 removed = game.remove_all_ships(ctx.author)
                 if removed:
                     game.placement_ready[ctx.author] = False
-                    await ctx.send(f"{ctx.author.mention}, all your ships have been removed. Please re-place them.", delete_after=10)
+                    await ctx.send(
+                        f"{ctx.author.mention}, all your ships have been removed. Please re-place them.",
+                        delete_after=10
+                    )
                 else:
-                    await ctx.send(f"{ctx.author.mention}, you have no ships to remove.", delete_after=10)
+                    await ctx.send(
+                        f"{ctx.author.mention}, you have no ships to remove.",
+                        delete_after=10
+                    )
                 return
         await ctx.send("No active Battleship game found for you.", delete_after=10)
 
