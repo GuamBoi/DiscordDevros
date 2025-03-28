@@ -60,7 +60,6 @@ class BattleshipGame:
         self.ships1 = {}
         self.ships2 = {}
         # Each player must place ships according to these requirements.
-        # For example, one 2‑space, two 3‑space, one 4‑space, and one 5‑space.
         self.ship_requirements = {2: 1, 3: 2, 4: 1, 5: 1}
         # Ready flags for each player's placement phase.
         self.placement_ready = {self.player1: False, self.player2: False}
@@ -507,44 +506,36 @@ class Battleship(commands.Cog):
                     add_currency(winner.name, GAME_WIN)
                     remove_currency(loser.name, GAME_LOSE)
 
-                    # Create a single embed with all final info
                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
+                    # 1) Plain text line for final boards
+                    await channel.send(
+                        f"Final Boards for Battleship game between {game.player1.mention} and {game.player2.mention}:"
+                    )
+
+                    # 2) Send each player's final board as a separate embed
+                    final_board1 = await create_embed(
+                        "Battleship - Final Board",
+                        game.board_to_string(game.board1)
+                    )
+                    final_board2 = await create_embed(
+                        "Battleship - Final Board",
+                        game.board_to_string(game.board2)
+                    )
+                    await channel.send(embed=final_board1)
+                    await channel.send(embed=final_board2)
+
+                    # 3) Send the game-over embed with currency results
                     description_text = (
                         f"{winner.mention} beat {loser.mention} in Battleship!\n\n"
                         f"**{winner.display_name}** won {CURRENCY_SYMBOL}{GAME_WIN}\n"
                         f"**{loser.display_name}** lost {CURRENCY_SYMBOL}{GAME_LOSE}\n\n"
-                        "Their final boards can be seen below:"
+                        "Thanks for playing!"
                     )
                     final_embed = await create_embed(
                         "Battleship - Game Over",
                         description_text,
                         color=discord.Color.blue()
                     )
-
-                    # Add each player's final board as a field
-                    if winner == game.player1:
-                        final_embed.add_field(
-                            name=f"{winner.display_name}'s Board",
-                            value=game.board_to_string(game.board1),
-                            inline=False
-                        )
-                        final_embed.add_field(
-                            name=f"{loser.display_name}'s Board",
-                            value=game.board_to_string(game.board2),
-                            inline=False
-                        )
-                    else:
-                        final_embed.add_field(
-                            name=f"{winner.display_name}'s Board",
-                            value=game.board_to_string(game.board2),
-                            inline=False
-                        )
-                        final_embed.add_field(
-                            name=f"{loser.display_name}'s Board",
-                            value=game.board_to_string(game.board1),
-                            inline=False
-                        )
-
                     await channel.send(embed=final_embed)
 
                     # Remove the game from active games
@@ -597,7 +588,7 @@ class Battleship(commands.Cog):
                             return False
             return True
 
-        # For player1, their ships are on board1; for player2, on board2.
+        # If all ships on board1 are hit, player2 is the winner, and vice versa.
         if all_ships_sunk(game.ships1, game.board1):
             return game.player2
         if all_ships_sunk(game.ships2, game.board2):
