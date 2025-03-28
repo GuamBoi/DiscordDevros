@@ -10,10 +10,10 @@ from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL, CURRENCY_SYMBOL
 
 # --- Constants & Helper Functions ---
 
-EMPTY_CELL = "⬜"       # Open ocean
-SHIP_CELL = "🟩"        # Placed ship cell during placement
-HIT_CELL = "🟥"         # Ship hit
-MISS_CELL = "🟦"        # Miss (blue square) – also used for header alignment
+EMPTY_CELL = ":white_large_square:"       # Open ocean
+SHIP_CELL = ":green_square:"              # Placed ship cell during placement
+HIT_CELL = ":red_square:"                 # Ship hit
+MISS_CELL = ":blue_square:"               # Miss – also used for header alignment
 
 # Arrow emojis used as cursor; also indicate orientation.
 CURSOR_EMOJIS = {
