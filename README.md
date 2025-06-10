@@ -21,6 +21,7 @@ cd DiscordDevros
 Create a virtual environment to isolate the bot's dependencies:
 
 ```sh
+sudo apt-get install python3-venv -y
 python3 -m venv venv
 source venv/bin/activate
 ```
