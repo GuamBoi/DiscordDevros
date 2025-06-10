@@ -11,6 +11,7 @@ DiscordDevros is a Discord bot interconnected with an Open WebUI server to gener
 ### 1. Clone the Repository
 
 ```sh
+sudo apt install git -y
 git clone git@github.com:GuamBoi/DiscordDevros.git
 cd DiscordDevros
 ```
