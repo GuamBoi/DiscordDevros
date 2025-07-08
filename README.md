@@ -2,7 +2,43 @@
 
 DiscordDevros is a Discord bot interconnected with an Open WebUI server to generate unique and more natural language responses. The code is structured in a modular format to allow for easy customization based on the needs of your server. The `cogs` folder contains the code for all commands available on the server. Each script is either an individual command, or a group of commands that function together to create a game or other feature. 
 
-## Setting Up your Open WebUI Server:
+## File Structure:
+```
+DiscordDevros/         # Main Directory
+│
+├── cogs/                   # Folder for command files
+│ ├── __init__.py             # Makes the cogs folder a package
+│ ├── ask.py                  # Ask your Pi LLM a question (Ai)
+│ ├── battleship.py           # Battleship game logic
+│ ├── bet.py                  # Handles bets between 2 server members
+│ ├── command_help.py         # Starts a chat to help users with commands (Ai)
+│ ├── connect4.py             # Connect 4 game logic
+│ ├── dice.py                 # Allows users to roll diffrent DND dice
+│ ├── invite.py               # Sends a game invite to the game being played
+│ ├── leaderboard.py          # Allows Users to check the economy leaderboard
+│ ├── server_customization.py # Command Logic for  
+│ └── wordle.py               # Commands for starting / guessing in wordle (Ai)
+│
+├── data/                   # Folder for storing 
+│ ├── commands.json           # File for storing command descriptions
+│ ├── prompts.json            # File for configuring Ai Message
+│ ├── rolls.json              # File for configuring server rolls
+│ └── wordle_words.txt        # File that lists backup wordle words
+│
+│── utils/                  # Folder for utility script function files
+│ ├── __init__.py             # Makes the utils folder a package
+│ ├── dictionary.py           # Loads and formats command information
+│ ├── economy.py              # Handls the economy logic
+│ ├── embed.py                # Handles the embed format for bot messages
+│ └── llm_api.py              # Handles connection with Open WebUI's API
+│
+├── .env                      # Stores bot token, prefix, and API info
+├── .gitignore                # Ignores sensitive files when cloned
+├── README.md                 # Code documentation (This File)
+├── bot.py                    # Main bot file (loads commands dynamically)
+├── config.py                 # Cofiguration file for bot settings
+└── requirements.txt          # Dependencies that need to be installed
+```
 
 ## Setting up your Discord Bot:
 
