@@ -1,8 +1,14 @@
 import os
 import json
-from config import ECONOMY_FOLDER, DEFAULT_CURRENCY_GIVE, DEFAULT_CURRENCY_TAKE, CURRENCY_NAME, GAME_WIN
+from config import (
+    ECONOMY_FOLDER,
+    DEFAULT_CURRENCY_GIVE,
+    DEFAULT_CURRENCY_TAKE,
+    CURRENCY_NAME,
+    GAME_WIN
+)
 
-# Ensure the economy folder exists inside the 'data' folder
+# Ensure the economy folder exists
 if not os.path.exists(ECONOMY_FOLDER):
     os.makedirs(ECONOMY_FOLDER)
 
@@ -11,97 +17,115 @@ def sanitize_filename(username):
     return "".join(c if c.isalnum() or c in ('_', '-') else '_' for c in username)
 
 def get_user_file(username):
-    """Return the full path of the user's economy file based on their username."""
-    safe_username = sanitize_filename(username)
-    return os.path.join(ECONOMY_FOLDER, f"{safe_username}.json")
+    """Return the full path of the user's economy file."""
+    safe = sanitize_filename(username)
+    return os.path.join(ECONOMY_FOLDER, f"{safe}.json")
 
 def load_economy(username):
-    """Load a user's economy data, or create a new file if none exists."""
-    user_file = get_user_file(username)
-
-    if os.path.exists(user_file):
-        with open(user_file, 'r') as f:
+    """Load or initialize a user's economy data."""
+    path = get_user_file(username)
+    if os.path.exists(path):
+        with open(path, 'r') as f:
             data = json.load(f)
-        
-        # Check and set missing keys
-        if "bet_lock" not in data:
-            data["bet_lock"] = 0
-        if "wordle_streak" not in data:
-            data["wordle_streak"] = 0
-        if "connect4_streak" not in data:
-            data["connect4_streak"] = 0
-        if "rolls" not in data:
-            data["rolls"] = []
-        if "currency" not in data:
-            data["currency"] = DEFAULT_CURRENCY_GIVE
-
-        save_economy(username, data)
-        return data
-    else:
-        # Create a new economy file with default values
-        data = {
-            "username": username,
-            "currency": DEFAULT_CURRENCY_GIVE,
+        # Back‑fill missing keys (including new XP/level)
+        for key, default in {
             "bet_lock": 0,
             "wordle_streak": 0,
             "connect4_streak": 0,
-            "rolls": []
-        }
+            "rolls": [],
+            "currency": DEFAULT_CURRENCY_GIVE,
+            "xp": 0,
+            "level": 1
+        }.items():
+            if key not in data:
+                data[key] = default
         save_economy(username, data)
         return data
 
+    # New user: create with defaults
+    data = {
+        "username": username,
+        "currency": DEFAULT_CURRENCY_GIVE,
+        "bet_lock": 0,
+        "wordle_streak": 0,
+        "connect4_streak": 0,
+        "rolls": [],
+        "xp": 0,
+        "level": 1
+    }
+    save_economy(username, data)
+    return data
+
 def save_economy(username, data):
-    """Save a user's economy data."""
-    user_file = get_user_file(username)
-    with open(user_file, 'w') as f:
+    """Persist a user's economy data."""
+    with open(get_user_file(username), 'w') as f:
         json.dump(data, f, indent=4)
 
 def add_currency(username, amount=DEFAULT_CURRENCY_GIVE):
-    """Add currency to a user's economy."""
     data = load_economy(username)
     data["currency"] += amount
     save_economy(username, data)
     return data["currency"]
 
 def remove_currency(username, amount=DEFAULT_CURRENCY_TAKE):
-    """Remove currency from a user's economy."""
     data = load_economy(username)
     data["currency"] = max(0, data["currency"] - amount)
     save_economy(username, data)
     return data["currency"]
 
 def get_balance(username):
-    """Retrieve the current balance for a user."""
     return load_economy(username)["currency"]
 
-def get_currency_name():
-    """Retrieve the configured currency name."""
-    return CURRENCY_NAME
+# —————— New XP / Level Functions ——————
+
+def add_xp(username, amount):
+    """
+    Award XP to a user, handle level‑ups, and pay out level reward.
+    Returns (leveled_up: bool, new_level: int).
+    """
+    data = load_economy(username)
+    data["xp"] += amount
+    leveled_up = False
+
+    # While enough XP to level
+    while data["xp"] >= 100 * data["level"]:
+        data["xp"] -= 100 * data["level"]
+        data["level"] += 1
+        # Reward = new level in currency
+        data["currency"] += data["level"]
+        leveled_up = True
+
+    save_economy(username, data)
+    return leveled_up, data["level"]
+
+def get_xp_level(username):
+    """Retrieve current XP and level."""
+    data = load_economy(username)
+    return data["xp"], data["level"]
+
+# —————— Game‑specific Helpers ——————
 
 def get_wordle_streak(username):
-    """Retrieve the current Wordle streak for a user."""
     return load_economy(username)["wordle_streak"]
 
 def set_wordle_streak(username, streak):
-    """Set the Wordle streak for a user."""
     data = load_economy(username)
     data["wordle_streak"] = streak
     save_economy(username, data)
     return streak
 
 def get_connect4_streak(username):
-    """Retrieve the current Connect4 streak for a user."""
     return load_economy(username)["connect4_streak"]
 
 def set_connect4_streak(username, streak):
-    """Set the Connect4 streak for a user."""
     data = load_economy(username)
     data["connect4_streak"] = streak
     save_economy(username, data)
     return streak
 
+# —————— Role‑shop Helpers ——————
+
 def add_role(username, role_name):
-    """Add a role to the user's rolls list."""
     data = load_economy(username)
     if role_name not in data["rolls"]:
         data["rolls"].append(role_name)
@@ -110,7 +134,6 @@ def add_role(username, role_name):
     return False
 
 def remove_role(username, role_name):
-    """Remove a role from the user's rolls list."""
     data = load_economy(username)
     if role_name in data["rolls"]:
         data["rolls"].remove(role_name)
@@ -119,13 +142,7 @@ def remove_role(username, role_name):
     return False
 
 def has_role(username, role_name):
-    """Check if a user already has the specified role."""
-    data = load_economy(username)
-    return role_name in data["rolls"]
+    return role_name in load_economy(username)["rolls"]
 
 def handle_roll_reaction(username, role_name):
-    """Handle reactions for role management."""
-    if has_role(username, role_name):
-        return remove_role(username, role_name)
-    else:
-        return add_role(username, role_name)
+    return remove_role(username, role_name) if has_role(username, role_name) else add_role(username, role_name)
