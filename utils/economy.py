@@ -13,36 +13,26 @@ if not os.path.exists(ECONOMY_FOLDER):
     os.makedirs(ECONOMY_FOLDER)
 
 def sanitize_filename(username):
-    """Ensure the filename is safe by removing special characters."""
+    """Sanitize username for filesystem use."""
     return "".join(c if c.isalnum() or c in ('_', '-') else '_' for c in username)
 
 def get_user_file(username):
-    """Return the full path of the user's economy file."""
+    """Get full path for a user's economy JSON file."""
     safe = sanitize_filename(username)
     return os.path.join(ECONOMY_FOLDER, f"{safe}.json")
 
 def load_economy(username):
-    """Load or initialize a user's economy data."""
+    """
+    Load a user's economy data.
+    - If file exists: load it (no back-fill).
+    - If not: create with full default schema.
+    """
     path = get_user_file(username)
     if os.path.exists(path):
         with open(path, 'r') as f:
-            data = json.load(f)
-        # Back‑fill missing keys (including new XP/level)
-        for key, default in {
-            "bet_lock": 0,
-            "wordle_streak": 0,
-            "connect4_streak": 0,
-            "rolls": [],
-            "currency": DEFAULT_CURRENCY_GIVE,
-            "xp": 0,
-            "level": 1
-        }.items():
-            if key not in data:
-                data[key] = default
-        save_economy(username, data)
-        return data
+            return json.load(f)
 
-    # New user: create with defaults
+    # New user: create default data
     data = {
         "username": username,
         "currency": DEFAULT_CURRENCY_GIVE,
@@ -57,7 +47,7 @@ def load_economy(username):
     return data
 
 def save_economy(username, data):
-    """Persist a user's economy data."""
+    """Persist a user's economy data to disk."""
     with open(get_user_file(username), 'w') as f:
         json.dump(data, f, indent=4)
 
@@ -76,22 +66,20 @@ def remove_currency(username, amount=DEFAULT_CURRENCY_TAKE):
 def get_balance(username):
     return load_economy(username)["currency"]
 
-# —————— New XP / Level Functions ——————
+# —————— XP / Level Functions ——————
 
 def add_xp(username, amount):
     """
-    Award XP to a user, handle level‑ups, and pay out level reward.
+    Award XP, handle level-ups, and reward currency on each new level.
     Returns (leveled_up: bool, new_level: int).
     """
     data = load_economy(username)
     data["xp"] += amount
     leveled_up = False
 
-    # While enough XP to level
     while data["xp"] >= 100 * data["level"]:
         data["xp"] -= 100 * data["level"]
         data["level"] += 1
-        # Reward = new level in currency
         data["currency"] += data["level"]
         leveled_up = True
 
@@ -99,14 +87,14 @@ def add_xp(username, amount):
     return leveled_up, data["level"]
 
 def get_xp_level(username):
-    """Retrieve current XP and level."""
-    data = load_economy(username)
-    return data["xp"], data["level"]
+    """Return (xp, level)."""
+    d = load_economy(username)
+    return d.get("xp", 0), d.get("level", 1)
 
 # —————— Game‑specific Helpers ——————
 
 def get_wordle_streak(username):
-    return load_economy(username)["wordle_streak"]
+    return load_economy(username).get("wordle_streak", 0)
 
 def set_wordle_streak(username, streak):
     data = load_economy(username)
@@ -115,7 +103,7 @@ def set_wordle_streak(username, streak):
     return streak
 
 def get_connect4_streak(username):
-    return load_economy(username)["connect4_streak"]
+    return load_economy(username).get("connect4_streak", 0)
 
 def set_connect4_streak(username, streak):
     data = load_economy(username)
@@ -142,7 +130,7 @@ def remove_role(username, role_name):
     return False
 
 def has_role(username, role_name):
-    return role_name in load_economy(username)["rolls"]
+    return role_name in load_economy(username).get("rolls", [])
 
 def handle_roll_reaction(username, role_name):
     return remove_role(username, role_name) if has_role(username, role_name) else add_role(username, role_name)
