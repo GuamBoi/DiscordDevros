@@ -5,7 +5,7 @@ from utils.economy import add_xp
 from utils.embed import create_embed
 
 class XP(commands.Cog):
-    """Cog to award XP and handle level‑up rewards."""
+    """Cog to award XP and handle level-up rewards."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -15,6 +15,7 @@ class XP(commands.Cog):
         if message.author.bot:
             return
 
+        # Award XP for a regular message
         leveled, new_level = add_xp(message.author.name, XP_PER_MESSAGE)
         if leveled:
             embed = await create_embed(
@@ -24,7 +25,7 @@ class XP(commands.Cog):
             )
             await message.channel.send(embed=embed)
 
-        await self.bot.process_commands(message)
+        # ⚠️ Removed await self.bot.process_commands(message) to prevent command doubling
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
