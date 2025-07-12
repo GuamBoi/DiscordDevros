@@ -1,17 +1,8 @@
----
-title: Discord Devros README
-author: GuamBoi
-date: 2025-07-12
-fileType: README
-description: The README file for the DiscordDevros Discord Bot
----
-___
-
 # About DiscordDevros
 
 DiscordDevros is a Discord bot interconnected with an Open WebUI server to generate unique and more natural language responses. The code is structured in a modular format to allow for easy customization based on the needs of your server. The `cogs` folder contains the code for all commands available on the server. Each script is either an individual command, or a group of commands that function together to create a game or other feature. 
 
-> **Open WebUI Information**:
+> [!info] Open WebUI Information
 > This README does not include information on setting up Open WebUI. For information on setting up Open WebUI on your preferred OS, see the guides on my website below:
 > 1. [Linux Guide](https://www.panoplylens.com/technology/hosting-a-local-llm-linux-recommendation/)
 > 2. [Windows Guide](https://www.panoplylens.com/technology/hosting-a-local-llm-windows-recommendation/)
@@ -98,26 +89,28 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Setup Environment Variables and `config.py` file Variables
-
-1. Create a `.env` file in the root directory and add your bot token and command prefix:
+### 4. Setup Environment Variables
+- Edit the `.env` file in the root directory with your bot token and Open WebUI API info by running:
 
 ```bash
 nano .env
 ```
 
+> Replace the placeholders you see below:
 ```
 DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
 OPENWEBUI_API_URL=http://RASPBERRY_PI_IP:PORT/api/chat/completions
 OPENWEBUI_API_KEY=YOUR_OPENWEBUI_API_KEY
 ```
 
-2. Edit the `config.py` file to configure the bot to your server and liking:
+### 5. Edit the `config.py` File Variables
+ - Edit the `config.py` file to configure the bot to your server by running:
 
 ```bash
 nano config.py
 ```
 
+> Make sure Channel IDs match your server and change any other variable you would like below:
 ```python
 # WARNING: This file contains my default (DEVROS') configuration values.
 #          Sensitive values should only be stored in .env!
@@ -186,7 +179,7 @@ ROLLS_CHANNEL = 1036732354426843146          # Set Roll Selection Channel ID
 BETTING_CHANNEL = 1351377151676518483        # Set Betting Channel ID
 ```
 
-### 5. Update the `rolls.json` File to Match Your Server
+### 6. Update the `rolls.json` File to Match Your Server
 ```json
 # WARNING: This file is only a template for yo to use to match your configuration values to your discord server.
 
@@ -221,7 +214,7 @@ BETTING_CHANNEL = 1351377151676518483        # Set Betting Channel ID
 }
 ```
 
-### 6. Test the Bot
+### 7. Test the Bot
 
 After setting up the environment, test the bot and try some of the commands after running the following command:
 
@@ -232,7 +225,7 @@ python bot.py
 After you test everything, to ensure your Discord bot continues running after you close your SSH session, you can utilize the `nohup` command. This command allows processes to persist even after your PuTTY session is closed. 
 - Close your current PuTTY instance and run the following commands after you log back in:
 
-### 7. Run the Bot Using `nohup`
+### 8. Run the Bot Using `nohup`
 
 Enter the Bot Directory and activate the virtual environment again
 
