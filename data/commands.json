@@ -214,4 +214,4 @@ COMMANDS = [
          "Example": "{COMMAND_PREFIX}togglexp on",
          "LLM_Context": "Enables or disables XP earning and level-up messages across the server."
      }
-]
+    ]
