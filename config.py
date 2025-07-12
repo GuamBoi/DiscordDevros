@@ -1,4 +1,4 @@
-# WARNING: This file contains default configuration values.
+# WARNING: This file contains default configuration values! Change them to match your server!
 #          Sensitive values should only be stored in .env!
 
 import os
