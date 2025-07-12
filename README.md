@@ -148,11 +148,13 @@ XP_PER_COMMAND = 5                # XP gained from using Devros commands
 LEVEL_UP_REWARD_MULTIPLIER = 100     # Default value Level Up reward (Value * LVL Earned)
 
 # Server Economy Settings
+
 ## Currency Values
 CURRENCY_NAME = "Devros Dolhairs"  # Name of your server's currency
 CURRENCY_SYMBOL = "Đ"
 DEFAULT_CURRENCY_GIVE = 100       # Default value adding currency
 DEFAULT_CURRENCY_TAKE = 100       # Default value adding currency
+
 ## Game Values
 GAME_WIN = 50                     # Game won currency value
 GAME_LOSE = 25                    # Game lost currency value
