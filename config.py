@@ -15,11 +15,11 @@ OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")     # Pulled from .env file
 # Non-sensitive settings (Additional bot settings that are okay to share)
 COMMAND_PREFIX = "!"              # Change value if you want different prefix.
 MODEL_NAME = "devros-mini"        # Set your model name here.
-ECONOMY_FOLDER = "data/eco"       # Folder where economy files are saved
+ECONOMY_FOLDER = "data/ecoonomy"       # Folder where server members economy files are saved
 
 # Bot Info
-BOT_NAME = "Devros"               # The name of your bot
-BOT_VERSION = "2.1 Beta"          # The version of your bot
+BOT_NAME = "Devros"                           # The name of your bot
+BOT_VERSION = "2.1 (Economy Update)"          # The version of your bot
 
 # Role Info
 MODERATOR_ROLE_ID = 1035393475631394896      # Role ID for server mods
