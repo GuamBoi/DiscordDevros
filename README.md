@@ -153,6 +153,7 @@ CURRENCY_NAME = "Devros Dolhairs"  # Name of your server's currency
 CURRENCY_SYMBOL = "Đ"
 DEFAULT_CURRENCY_GIVE = 100       # Default value adding currency
 DEFAULT_CURRENCY_TAKE = 100       # Default value adding currency
+## Game Values
 GAME_WIN = 50                     # Game won currency value
 GAME_LOSE = 25                    # Game lost currency value
 
