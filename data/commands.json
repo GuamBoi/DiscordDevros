@@ -14,6 +14,20 @@
         "LLM_Context": "The 'commands' command provides a summary of all bot commands to help users understand available features."
     },
     {
+        "Command_Name": "economycommands",
+        "Category": ["member", "general"],
+        "Description": "Displays a list of all economy commands",
+        "Example": "{COMMAND_PREFIX}commands",
+        "LLM_Context": "The 'economycommands' command provides a summary of all econmy commands to help users understand available features."
+    },
+    {
+        "Command_Name": "gamecommands",
+        "Category": ["member", "general"],
+        "Description": "Displays a list of all game commands",
+        "Example": "{COMMAND_PREFIX}commands",
+        "LLM_Context": "The 'gamecommands' command provides a summary of all game commands to help users understand available features."
+    },
+    {
         "Command_Name": "modcommands",
         "Category": ["moderator", "general"],
         "Description": "Displays a list of commands only server moderators can use.",
