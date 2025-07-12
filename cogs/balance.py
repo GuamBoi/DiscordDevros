@@ -30,7 +30,14 @@ class Balance(commands.Cog):
             color=discord.Color.blue()
         )
         await ctx.send(embed=embed)
-        await ctx.message.delete()
+
+        # Safely attempt to delete the invoking message
+        try:
+            await ctx.message.delete()
+        except discord.NotFound:
+            pass  # Message already deleted
+        except discord.Forbidden:
+            pass  # Bot doesn't have permission
 
 async def setup(bot):
     await bot.add_cog(Balance(bot))
