@@ -1,12 +1,9 @@
 ---
 title: Discord Devros README
-fileType: README
-tags:
-  - DiscordDevros
-  - README
-description: the README file for the DiscordDevros Discord Bot
-date: 2025-07-12
 author: GuamBoi
+date: 2025-07-12
+fileType: README
+description: the README file for the DiscordDevros Discord Bot
 ---
 ___
 
