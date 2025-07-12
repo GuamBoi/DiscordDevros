@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from config import XP_PER_MESSAGE, XP_PER_REACTION, XP_PER_COMMAND
+from config import XP_PER_MESSAGE, XP_PER_REACTION, XP_PER_COMMAND, LEVEL_UP_REWARD_MULTIPLIER
 from utils.economy import add_xp
 from utils.embed import create_embed
 
@@ -15,17 +15,17 @@ class XP(commands.Cog):
         if message.author.bot:
             return
 
-        # Award XP for a regular message
         leveled, new_level = add_xp(message.author.name, XP_PER_MESSAGE)
         if leveled:
+            reward = new_level * LEVEL_UP_REWARD_MULTIPLIER
             embed = await create_embed(
                 title="Level Up! 🎉",
-                description=f"{message.author.mention}, you just hit level **{new_level}** and earned **{new_level} Devros$**!",
+                description=f"{message.author.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
                 color=discord.Color.green()
             )
             await message.channel.send(embed=embed)
 
-        # ⚠️ Removed await self.bot.process_commands(message) to prevent command doubling
+        # Removed await self.bot.process_commands(message) to prevent duplication
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -34,9 +34,10 @@ class XP(commands.Cog):
 
         leveled, new_level = add_xp(user.name, XP_PER_REACTION)
         if leveled:
+            reward = new_level * LEVEL_UP_REWARD_MULTIPLIER
             embed = await create_embed(
                 title="Level Up! 🎉",
-                description=f"{user.mention}, you just hit level **{new_level}** and earned **{new_level} Devros$**!",
+                description=f"{user.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
                 color=discord.Color.green()
             )
             await reaction.message.channel.send(embed=embed)
@@ -48,9 +49,10 @@ class XP(commands.Cog):
 
         leveled, new_level = add_xp(ctx.author.name, XP_PER_COMMAND)
         if leveled:
+            reward = new_level * LEVEL_UP_REWARD_MULTIPLIER
             embed = await create_embed(
                 title="Level Up! 🎉",
-                description=f"{ctx.author.mention}, you just hit level **{new_level}** and earned **{new_level} Devros$**!",
+                description=f"{ctx.author.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
                 color=discord.Color.green()
             )
             await ctx.send(embed=embed)
