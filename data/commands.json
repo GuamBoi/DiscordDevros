@@ -1,9 +1,4 @@
-"""
-Command definitions for Devros bot (DiscordDevros).
-Each command is grouped by category with helpful headings.
-"""
-
-COMMANDS = [
+[
 # —————————————— AI & Utility ——————————————
     {
         "Command_Name": "ask",
