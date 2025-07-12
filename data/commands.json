@@ -200,18 +200,11 @@ COMMANDS = [
 #    },
 
 # —————————————— Moderator Commands ——————————————
-#    {
-#        "Command_Name": "setprefix",
-#        "Category": "moderator",
-#        "Description": "Change the bot’s command prefix (moderator only).",
-#        "Example": "{COMMAND_PREFIX}setprefix ?",
-#        "LLM_Context": "Allows moderators to update the bot’s global prefix for commands."
-#    },
      {
-         "Command_Name": "togglexp",
+         "Command_Name": "config",
          "Category": "moderator",
-         "Description": "Toggle the XP system on or off (moderator only).",
-         "Example": "{COMMAND_PREFIX}togglexp on",
-         "LLM_Context": "Enables or disables XP earning and level-up messages across the server."
+         "Description": "View or modify bot configuration settings. Use subcommands: get, set, list.",
+         "Example": "{COMMAND_PREFIX}config list | {COMMAND_PREFIX}config get ENABLE_XP_SYSTEM | {COMMAND_PREFIX}config set ENABLE_XP_SYSTEM false",
+         "LLM_Context": "Manage bot settings with commands to get, set, or list editable configuration keys."
      }
 ]
