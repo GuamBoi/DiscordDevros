@@ -11,7 +11,7 @@ ___
 
 DiscordDevros is a Discord bot interconnected with an Open WebUI server to generate unique and more natural language responses. The code is structured in a modular format to allow for easy customization based on the needs of your server. The `cogs` folder contains the code for all commands available on the server. Each script is either an individual command, or a group of commands that function together to create a game or other feature. 
 
-> Open WebUI Information
+> **Open WebUI Information**\n
 > This README does not include information on setting up Open WebUI. For information on setting up Open WebUI on your preferred OS, see the guides on my website below:
 > 1. [Linux Guide](https://www.panoplylens.com/technology/hosting-a-local-llm-linux-recommendation/)
 > 2. [Windows Guide](https://www.panoplylens.com/technology/hosting-a-local-llm-windows-recommendation/)
