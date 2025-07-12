@@ -156,14 +156,6 @@ DEFAULT_CURRENCY_TAKE = 100       # Default value adding currency
 GAME_WIN = 50                     # Game won currency value
 GAME_LOSE = 25                    # Game lost currency value
 
-## Stock System Settings
-ENABLE_STOCK_SYSTEM = True             # Master toggle for stock commands
-STOCK_NAME = "Devros Holdings"         # Friendly name for the stock
-STOCK_TICKER = "DRVS"                  # Short ticker symbol
-BASE_DIVIDEND_VALUE = 100              # Base dividend per share
-DYNAMIC_DIVIDEND_YIELD = True          # True for dynamic formula, False for flat yield
-STOCK_NOTIFICATION_CHANNEL_ID = None   # Channel for stock updates (None to use invoking channel)
-
 # Channel Specifications (Defined directly in config.py, not from .env)
 ## Game Channels
 INVITE_CHANNEL = 1036762745527357450         # Set Game Invite Channel ID
