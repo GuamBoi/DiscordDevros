@@ -3,7 +3,7 @@ title: Discord Devros README
 author: GuamBoi
 date: 2025-07-12
 fileType: README
-description: the README file for the DiscordDevros Discord Bot
+description: The README file for the DiscordDevros Discord Bot
 ---
 ___
 
