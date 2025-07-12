@@ -1,14 +1,18 @@
 import discord
 from discord.ext import commands
+import json
+import os
 import config
+
+CONFIG_FILE = "config.json"
 
 class ConfigManager(commands.Cog):
     """
-    Cog allowing moderators to view and modify runtime configuration settings.
+    Cog allowing moderators to view and modify runtime configuration settings,
+    with persistent saving/loading from a JSON file.
     """
     def __init__(self, bot):
         self.bot = bot
-        # Gather editable config keys and their types
         self.editable = {
             'ENABLE_XP_SYSTEM': bool,
             'SHOW_LEVEL_UP_MESSAGES': bool,
@@ -27,21 +31,50 @@ class ConfigManager(commands.Cog):
             'BASE_DIVIDEND_VALUE': int,
             'DYNAMIC_DIVIDEND_YIELD': bool,
             'STOCK_NOTIFICATION_CHANNEL_ID': (int, type(None)),
+            'COMMAND_PREFIX': str,
         }
+        self.load_config()
 
     def cog_check(self, ctx):
-        # Only allow moderators to use these commands
         mod_role_id = config.MODERATOR_ROLE_ID
         return any(role.id == mod_role_id for role in ctx.author.roles)
 
+    def load_config(self):
+        """Load config values from JSON file and update config module."""
+        if not os.path.isfile(CONFIG_FILE):
+            return  # No config file yet, skip loading
+
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                data = json.load(f)
+        except Exception as e:
+            print(f"[ConfigManager] Failed to load config.json: {e}")
+            return
+
+        # Override config.py attributes if present in JSON
+        for key, val in data.items():
+            if key in self.editable:
+                setattr(config, key, val)
+
+    def save_config(self):
+        """Save current editable config values to JSON file."""
+        data = {}
+        for key in self.editable:
+            val = getattr(config, key)
+            # For types like None, json can handle it directly
+            data[key] = val
+        try:
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print(f"[ConfigManager] Failed to save config.json: {e}")
+
     @commands.group(name='config', invoke_without_command=True)
     async def config(self, ctx):
-        """View or edit bot configuration. Use subcommands `get`, `set`, `list`"""
         await ctx.send("Usage: `!config get <key>`, `!config set <key> <value>`, `!config list`")
 
     @config.command(name='get')
     async def config_get(self, ctx, key: str):
-        """Get the current value of a config key"""
         key = key.upper()
         if key not in self.editable:
             return await ctx.send(f"❌ `{key}` is not an editable config key.")
@@ -50,20 +83,18 @@ class ConfigManager(commands.Cog):
 
     @config.command(name='set')
     async def config_set(self, ctx, key: str, *, raw_value: str):
-        """Set a new value for a config key"""
         key = key.upper()
         if key not in self.editable:
             return await ctx.send(f"❌ `{key}` is not an editable config key.")
         expected_type = self.editable[key]
         try:
-            # Cast raw_value into expected_type
             if expected_type is bool:
                 val = raw_value.lower() in ('true', '1', 'yes', 'on')
             elif expected_type is int:
                 val = int(raw_value)
             elif expected_type is str:
                 val = raw_value
-            elif isinstance(expected_type, tuple):  # e.g. (int, NoneType)
+            elif isinstance(expected_type, tuple):
                 if raw_value.lower() == 'none':
                     val = None
                 else:
@@ -73,17 +104,32 @@ class ConfigManager(commands.Cog):
         except Exception as e:
             return await ctx.send(f"❌ Failed to cast value: {e}")
         setattr(config, key, val)
+        self.save_config()
         await ctx.send(f"✅ `{key}` set to `{val}`")
 
     @config.command(name='list')
     async def config_list(self, ctx):
-        """List all editable config keys and their current values"""
         lines = []
         for k in sorted(self.editable.keys()):
             val = getattr(config, k)
             lines.append(f"`{k}` = `{val}`")
         msg = "\n".join(lines)
         await ctx.send(f"**Editable Config Keys:**\n{msg}")
+
+    @commands.command(name="togglexp")
+    async def togglexp(self, ctx, state: str):
+        if state.lower() not in ["on", "off"]:
+            return await ctx.send("❌ Usage: `!togglexp on` or `!togglexp off`")
+        value = state.lower() == "on"
+        setattr(config, "ENABLE_XP_SYSTEM", value)
+        self.save_config()
+        await ctx.send(f"✅ XP system {'enabled' if value else 'disabled'}.")
+
+    @commands.command(name="setprefix")
+    async def setprefix(self, ctx, new_prefix: str):
+        setattr(config, "COMMAND_PREFIX", new_prefix)
+        self.save_config()
+        await ctx.send(f"✅ Command prefix updated to `{new_prefix}`")
 
 async def setup(bot):
     await bot.add_cog(ConfigManager(bot))
