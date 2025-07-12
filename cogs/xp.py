@@ -1,11 +1,13 @@
 import discord
 from discord.ext import commands
 from config import (
+    ENABLE_XP_SYSTEM,
+    SHOW_LEVEL_UP_MESSAGES,
+    XP_NOTIFICATION_CHANNEL_ID,
     XP_PER_MESSAGE,
     XP_PER_REACTION,
     XP_PER_COMMAND,
     LEVEL_UP_REWARD_MULTIPLIER,
-    LEVEL_UP_CHANNEL_ID
 )
 from utils.economy import add_xp
 from utils.embed import create_embed
@@ -16,60 +18,56 @@ class XP(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def get_announcement_channel(self, fallback_channel):
-        """Returns the appropriate level-up announcement channel."""
-        if LEVEL_UP_CHANNEL_ID:
-            channel = self.bot.get_channel(LEVEL_UP_CHANNEL_ID)
-            return channel if channel else fallback_channel
-        return fallback_channel
+    async def send_level_up_message(self, member, level, channel):
+        if not SHOW_LEVEL_UP_MESSAGES:
+            return
+
+        reward = level * LEVEL_UP_REWARD_MULTIPLIER
+        embed = await create_embed(
+            title="Level Up! 🎉",
+            description=f"{member.mention}, you just hit level **{level}** and earned **{reward} Devros$**!",
+            color=discord.Color.green()
+        )
+
+        try:
+            # Use specified channel or fallback
+            if XP_NOTIFICATION_CHANNEL_ID:
+                notify_channel = self.bot.get_channel(XP_NOTIFICATION_CHANNEL_ID)
+                if notify_channel:
+                    await notify_channel.send(embed=embed)
+                    return
+
+            # Fallback: send to original channel if XP_NOTIFICATION_CHANNEL_ID is not set or invalid
+            await channel.send(embed=embed)
+        except Exception as e:
+            print(f"[XP] Failed to send level-up message: {e}")
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot:
+        if not ENABLE_XP_SYSTEM or message.author.bot:
             return
 
         leveled, new_level = add_xp(message.author.name, XP_PER_MESSAGE)
         if leveled:
-            reward = new_level * LEVEL_UP_REWARD_MULTIPLIER
-            embed = await create_embed(
-                title="Level Up! 🎉",
-                description=f"{message.author.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
-                color=discord.Color.green()
-            )
-            channel = self.get_announcement_channel(message.channel)
-            await channel.send(embed=embed)
+            await self.send_level_up_message(message.author, new_level, message.channel)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        if user.bot:
+        if not ENABLE_XP_SYSTEM or user.bot:
             return
 
         leveled, new_level = add_xp(user.name, XP_PER_REACTION)
         if leveled:
-            reward = new_level * LEVEL_UP_REWARD_MULTIPLIER
-            embed = await create_embed(
-                title="Level Up! 🎉",
-                description=f"{user.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
-                color=discord.Color.green()
-            )
-            channel = self.get_announcement_channel(reaction.message.channel)
-            await channel.send(embed=embed)
+            await self.send_level_up_message(user, new_level, reaction.message.channel)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
-        if ctx.author.bot:
+        if not ENABLE_XP_SYSTEM or ctx.author.bot:
             return
 
         leveled, new_level = add_xp(ctx.author.name, XP_PER_COMMAND)
         if leveled:
-            reward = new_level * LEVEL_UP_REWARD_MULTIPLIER
-            embed = await create_embed(
-                title="Level Up! 🎉",
-                description=f"{ctx.author.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
-                color=discord.Color.green()
-            )
-            channel = self.get_announcement_channel(ctx.channel)
-            await channel.send(embed=embed)
+            await self.send_level_up_message(ctx.author, new_level, ctx.channel)
 
 async def setup(bot):
     await bot.add_cog(XP(bot))
