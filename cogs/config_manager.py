@@ -119,6 +119,7 @@ class ConfigManager(commands.Cog):
     @commands.command(name="setprefix")
     async def setprefix(self, ctx, new_prefix: str):
         setattr(config, "COMMAND_PREFIX", new_prefix)
+        self.bot.command_prefix = new_prefix
         self.save_config()
         await ctx.send(f"✅ Command prefix updated to `{new_prefix}`")
 
