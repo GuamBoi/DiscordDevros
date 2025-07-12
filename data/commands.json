@@ -4,7 +4,7 @@ Each command is grouped by category with helpful headings.
 """
 
 COMMANDS = [
-    # —————————————— AI & Utility ——————————————
+# —————————————— AI & Utility ——————————————
     {
         "Command_Name": "ask",
         "Category": "member",
@@ -27,7 +27,7 @@ COMMANDS = [
         "LLM_Context": "Displays a list of commands only server moderators can use."
     },
 
-    # —————————————— Leaderboards and Progress ——————————————
+# —————————————— Leaderboards and Progress ——————————————
     {
         "Command_Name": "balance",
         "Category": "member",
@@ -43,7 +43,7 @@ COMMANDS = [
         "LLM_Context": "Shows a leaderboard of the top 10 members sorted by level and XP, including their Devros Dolhairs balance."
     },
   
-    # —————————————— Economy & Currency ——————————————
+# —————————————— Economy & Currency ——————————————
     {
         "Command_Name": "award",
         "Category": "moderator",
@@ -66,9 +66,9 @@ COMMANDS = [
         "LLM_Context": "Allows members to challenge each other to a bet, with acceptance, resolution, and lockout on disagreements."
     },
   
-    # —————————————— Games & Streaks ——————————————
+# —————————————— Games & Streaks ——————————————
 
-    # ———————— Wordle ————————
+# ———————— Wordle ————————
     {
         "Command_Name": "wordle",
         "Category": "member",
@@ -91,7 +91,7 @@ COMMANDS = [
         "LLM_Context": "Displays the top 10 members based on current Wordle streaks."
     },
     
-    # ———————— Connect4 ————————
+# ———————— Connect4 ————————
     {
         "Command_Name": "connect4",
         "Category": "member",
@@ -107,7 +107,7 @@ COMMANDS = [
         "LLM_Context": "Displays the top 10 members based on current Connect 4 streaks."
     },
   
-    # ———————— Battleship ————————
+# ———————— Battleship ————————
     {
         "Command_Name": "battleship",
         "Category": "member",
@@ -167,7 +167,7 @@ COMMANDS = [
         "LLM_Context": "Rolls a 20-sided dice and returns the result in an embed."
     },
   
-    # —————————————— Mini‑Games & Daily Engagement ——————————————
+# —————————————— Mini‑Games & Daily Engagement ——————————————
 #   {
 #        "Command_Name": "slots",
 #        "Category": "member",
@@ -176,7 +176,7 @@ COMMANDS = [
 #        "LLM_Context": "Allows one free pull per day on a slot machine; prizes are awarded in Devros Dolhairs."
 #    },
   
-     # —————————————— Shop & Server Perks ——————————————
+# —————————————— Shop & Server Perks ——————————————
 #    {
 #        "Command_Name": "shop",
 #        "Category": "member",
@@ -199,7 +199,7 @@ COMMANDS = [
 #        "LLM_Context": "Removes a previously purchased item or role and refunds the user at a percentage of the original cost."
 #    },
 
-    # —————————————— Moderator Commands ——————————————
+# —————————————— Moderator Commands ——————————————
 #    {
 #        "Command_Name": "setprefix",
 #        "Category": "moderator",
