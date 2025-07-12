@@ -116,15 +116,6 @@ class ConfigManager(commands.Cog):
         msg = "\n".join(lines)
         await ctx.send(f"**Editable Config Keys:**\n{msg}")
 
-    @commands.command(name="togglexp")
-    async def togglexp(self, ctx, state: str):
-        if state.lower() not in ["on", "off"]:
-            return await ctx.send("❌ Usage: `!togglexp on` or `!togglexp off`")
-        value = state.lower() == "on"
-        setattr(config, "ENABLE_XP_SYSTEM", value)
-        self.save_config()
-        await ctx.send(f"✅ XP system {'enabled' if value else 'disabled'}.")
-
     @commands.command(name="setprefix")
     async def setprefix(self, ctx, new_prefix: str):
         setattr(config, "COMMAND_PREFIX", new_prefix)
