@@ -8,6 +8,8 @@ from config import (
     XP_PER_REACTION,
     XP_PER_COMMAND,
     LEVEL_UP_REWARD_MULTIPLIER,
+    CURRENCY_NAME, 
+    CURRENCY_SYMBOL,
 )
 from utils.economy import add_xp
 from utils.embed import create_embed
@@ -25,7 +27,7 @@ class XP(commands.Cog):
         reward = level * LEVEL_UP_REWARD_MULTIPLIER
         embed = await create_embed(
             title="Level Up! 🎉",
-            description=f"{member.mention}, you just hit level **{level}** and earned **{reward} Devros$**!",
+            description=f"{member.mention}, you just hit level **{level}** and earned **{CURRENCY_SYMBOL}{reward}** {CURRENCY_NAME}",
             color=discord.Color.green()
         )
 
