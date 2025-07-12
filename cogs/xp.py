@@ -1,6 +1,12 @@
 import discord
 from discord.ext import commands
-from config import XP_PER_MESSAGE, XP_PER_REACTION, XP_PER_COMMAND, LEVEL_UP_REWARD_MULTIPLIER
+from config import (
+    XP_PER_MESSAGE,
+    XP_PER_REACTION,
+    XP_PER_COMMAND,
+    LEVEL_UP_REWARD_MULTIPLIER,
+    LEVEL_UP_CHANNEL_ID
+)
 from utils.economy import add_xp
 from utils.embed import create_embed
 
@@ -9,6 +15,13 @@ class XP(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+    def get_announcement_channel(self, fallback_channel):
+        """Returns the appropriate level-up announcement channel."""
+        if LEVEL_UP_CHANNEL_ID:
+            channel = self.bot.get_channel(LEVEL_UP_CHANNEL_ID)
+            return channel if channel else fallback_channel
+        return fallback_channel
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -23,9 +36,8 @@ class XP(commands.Cog):
                 description=f"{message.author.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
                 color=discord.Color.green()
             )
-            await message.channel.send(embed=embed)
-
-        # Removed await self.bot.process_commands(message) to prevent duplication
+            channel = self.get_announcement_channel(message.channel)
+            await channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -40,7 +52,8 @@ class XP(commands.Cog):
                 description=f"{user.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
                 color=discord.Color.green()
             )
-            await reaction.message.channel.send(embed=embed)
+            channel = self.get_announcement_channel(reaction.message.channel)
+            await channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
@@ -55,7 +68,8 @@ class XP(commands.Cog):
                 description=f"{ctx.author.mention}, you just hit level **{new_level}** and earned **{reward} Devros$**!",
                 color=discord.Color.green()
             )
-            await ctx.send(embed=embed)
+            channel = self.get_announcement_channel(ctx.channel)
+            await channel.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(XP(bot))
