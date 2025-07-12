@@ -209,9 +209,9 @@ COMMANDS = [
 #    },
      {
          "Command_Name": "togglexp",
-         "Category": "moderator",
+         "Category": "moderator",
          "Description": "Toggle the XP system on or off (moderator only).",
          "Example": "{COMMAND_PREFIX}togglexp on",
          "LLM_Context": "Enables or disables XP earning and level-up messages across the server."
      }
-    ]
+     ]
