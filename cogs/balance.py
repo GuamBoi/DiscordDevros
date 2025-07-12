@@ -20,7 +20,7 @@ class Balance(commands.Cog):
             f"{ctx.author.mention}, you have **{CURRENCY_SYMBOL}{bal}**.\n\n"
             f"**Level:** {lvl}\n"
             f"**XP:** {xp} / {needed}\n\n"
-            f"**Wordle Streak:** `{data.get('wordle_streak', 0)}`  "
+            f"**Wordle Streak:** `{data.get('wordle_streak', 0)}`\n  "
             f"**Connect4 Streak:** `{data.get('connect4_streak', 0)}`"
         )
 
