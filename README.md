@@ -6,9 +6,6 @@ tags:
   - README
 description: the README file for the DiscordDevros Discord Bot
 date: 2025-07-12
-relatedNotes:
-  - "[[DiscordDevros Updates]]"
-  - "[[Hosting a local LLM (Linux Recommendation)]]"
 author: GuamBoi
 ---
 ___
