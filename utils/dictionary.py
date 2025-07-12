@@ -5,18 +5,20 @@ from config import COMMAND_PREFIX  # to clean placeholder spacing if needed
 # Path to the commands JSON file
 COMMANDS_JSON_PATH = os.path.join("data", "commands.json")
 
+
 def replace_placeholders(text, config_vars):
     """Helper function to replace placeholders in text using provided config variables."""
     if isinstance(text, str):
         for var_name, var_value in config_vars.items():
             placeholder = f"{{{var_name}}}"
-            text = text.replace(placeholder, f"{var_value}")
+            text = text.replace(placeholder, str(var_value))
         # Normalize spaces
         text = ' '.join(text.split())
         # Fix spacing after prefix or mentions
         text = text.replace(f"{COMMAND_PREFIX} ", COMMAND_PREFIX)
         text = text.replace("@ ", "@")
     return text
+
 
 def load_commands_data():
     """Load the commands JSON file and replace placeholders using config.py values."""
@@ -44,19 +46,22 @@ def load_commands_data():
 
     return data
 
+
 def get_member_commands():
-    """Return list of commands with Category 'member'."""
+    """Return list of commands that include 'member' in their Category list."""
     return [
         cmd for cmd in load_commands_data()
-        if cmd.get("Category", "member").lower() == "member"
+        if isinstance(cmd.get("Category"), list) and "member" in cmd["Category"]
     ]
 
+
 def get_moderator_commands():
-    """Return list of commands with Category 'moderator'."""
+    """Return list of commands that include 'moderator' in their Category list."""
     return [
         cmd for cmd in load_commands_data()
-        if cmd.get("Category", "").lower() == "moderator"
+        if isinstance(cmd.get("Category"), list) and "moderator" in cmd["Category"]
     ]
+
 
 def get_command_info(command_name):
     """Retrieve information about a specific command from commands.json."""
