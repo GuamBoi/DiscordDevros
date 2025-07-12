@@ -25,7 +25,7 @@ class CommandHelp(commands.Cog):
     async def commands_list(self, ctx):
         """Show general member commands (Category: general)."""
         cmds = get_member_commands()
-        general_cmds = [c for c in cmds if "general" in c["Category"] and "moderator" not in c["Category"]]
+        general_cmds = [c for c in cmds if "general" in c.get("Category", []) and "moderator" not in c.get("Category", [])]
         desc = [format_command(c) for c in general_cmds]
 
         if any(r.id == MODERATOR_ROLE_ID for r in ctx.author.roles):
@@ -42,7 +42,7 @@ class CommandHelp(commands.Cog):
     async def economy_commands(self, ctx):
         """Show member economy commands (excluding moderator-only)."""
         cmds = get_member_commands()
-        econ_cmds = [c for c in cmds if "economy" in c["Category"] and "moderator" not in c["Category"]]
+        econ_cmds = [c for c in cmds if "economy" in c.get("Category", []) and "moderator" not in c.get("Category", [])]
         desc = [format_command(c) for c in econ_cmds]
 
         embed = discord.Embed(
@@ -56,7 +56,7 @@ class CommandHelp(commands.Cog):
     async def game_commands(self, ctx):
         """Show member game and leaderboard commands grouped by game."""
         cmds = get_member_commands()
-        cmds = [c for c in cmds if "moderator" not in c["Category"]]
+        cmds = [c for c in cmds if "moderator" not in c.get("Category", [])]
         categories = ["leaderboards", "wordle", "connect4", "battleship", "dice"]
         grouped = categorize(cmds, categories)
 
