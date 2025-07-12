@@ -146,34 +146,6 @@
         "Example": "{COMMAND_PREFIX}d20",
         "LLM_Context": "Rolls a 20-sided dice and returns the result in an embed."
     },
-#   {
-#        "Command_Name": "slots",
-#        "Category": "member",
-#        "Description": "Pull the daily slot machine for a chance to win Devros Dolhairs.",
-#        "Example": "{COMMAND_PREFIX}slots",
-#        "LLM_Context": "Allows one free pull per day on a slot machine; prizes are awarded in Devros Dolhairs."
-#    },
-#    {
-#        "Command_Name": "shop",
-#        "Category": "member",
-#        "Description": "Browse the server shop for purchasable roles and perks.",
-#        "Example": "{COMMAND_PREFIX}shop",
-#        "LLM_Context": "Lists all items and roles available in the server shop along with prices."
-#    },
-#    {
-#        "Command_Name": "buy",
-#        "Category": "member",
-#        "Description": "Purchase an item or role from the server shop.",
-#        "Example": "{COMMAND_PREFIX}buy <ItemName>",
-#        "LLM_Context": "Deducts Devros Dolhairs and grants the selected shop item or role to the user."
-#    },
-#    {
-#        "Command_Name": "sell",
-#        "Category": "member",
-#        "Description": "Sell back a shop item or role for a partial refund.",
-#        "Example": "{COMMAND_PREFIX}sell <ItemName>",
-#        "LLM_Context": "Removes a previously purchased item or role and refunds the user at a percentage of the original cost."
-#    },
      {
          "Command_Name": "config",
          "Category": "moderator",
