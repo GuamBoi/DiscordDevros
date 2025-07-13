@@ -16,7 +16,7 @@
         "description": "**Channel Options:**",
         "note": "Select the channels you want to join to be added to those channels!",
         "options": {
-            "🪙": {"name": "`Economy`", "role_id": 1393737562740494497}
+            "🪙": {"name": "`Economy`", "role_id": 1393737562740494497},
             "🧙‍♀️": {"name": "`Baldur's Gate 3`", "role_id": 1193312758721159208},
             "⛏️": {"name": "`Minecraft`", "role_id": 1224585359313080351},
             "🕰️": {"name": "`Blood on The Clocktower`", "role_id": 1154988413871730688},
