@@ -24,8 +24,6 @@
             "💀": {"name": "`Dead By Daylight`", "role_id": 1202837366474149898},
             "🃏": {"name": "`Hearthstone`", "role_id": 1262227785225863240},
             "🪖": {"name": "`War Thunder`", "role_id": 1388664382120267856},
-            "🍿": {"name": "`Movie Night`", "role_id": 1286477879906930750},
-            "📕": {"name": "`Book Club`", "role_id": 1393738899381162025}
         }
     },
     "notifications": {
@@ -33,6 +31,8 @@
         "description": "**Notification Options:**",
         "note": "Select the notifications you wish to receive.",
         "options": {
+            "🍿": {"name": "`Movie Night`", "role_id": 1286477879906930750},
+            "📕": {"name": "`Book Club`", "role_id": 1393738899381162025},
             "🆓": {"name": "`Free Games`", "role_id": 1197633716256776243},
             "🔼": {"name": "`Game Updates`", "role_id": 1388668364221579424}
         }
