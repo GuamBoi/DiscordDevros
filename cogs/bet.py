@@ -1,5 +1,4 @@
 import discord
-import os
 from discord.ext import commands
 from utils.economy import load_economy, save_economy, add_currency, remove_currency
 from utils.embed import create_embed
