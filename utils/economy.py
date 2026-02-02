@@ -1,11 +1,10 @@
-import os
-import json
 from config import (
     ECONOMY_FOLDER,
     DEFAULT_CURRENCY_GIVE,
     DEFAULT_CURRENCY_TAKE,
     CURRENCY_NAME,
-    GAME_WIN
+    GAME_WIN,
+    LEVEL_UP_REWARD_MULTIPLIER
 )
 
 # Ensure the economy folder exists
@@ -80,16 +79,15 @@ def add_xp(username, amount):
     while data["xp"] >= 100 * data["level"]:
         data["xp"] -= 100 * data["level"]
         data["level"] += 1
-        data["currency"] += data["level"]
+
+        # Reward = multiplier × new level
+        reward = LEVEL_UP_REWARD_MULTIPLIER * data["level"]
+        data["currency"] += reward
+
         leveled_up = True
 
     save_economy(username, data)
     return leveled_up, data["level"]
-
-def get_xp_level(username):
-    """Return (xp, level)."""
-    d = load_economy(username)
-    return d.get("xp", 0), d.get("level", 1)
 
 # —————— Game‑specific Helpers ——————
 
