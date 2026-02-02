@@ -38,8 +38,8 @@ class BetCog(commands.Cog):
                 if "A" <= ch <= "Z":
                     return chr(0x1F1E6 + (ord(ch) - ord("A")))  # regional indicator 🇦-🇿
 
-        # Fallback if no A–Z exists (all numbers/emojis/etc.)
-        return "🅰️"
+            # Fallback if no A–Z exists (all numbers/emojis/etc.)
+            return "🅰️"
 
 
         # Deduct the bet amount from both players immediately
