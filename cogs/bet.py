@@ -31,6 +31,17 @@ class BetCog(commands.Cog):
             await ctx.send("You must bet a positive amount!")
             return
 
+        def _letter_emoji_for(self, user: discord.abc.User) -> str:     # Prefer server nickname/display name if available
+            raw = getattr(user, "display_name", None) or user.name
+
+            for ch in raw.upper():
+                if "A" <= ch <= "Z":
+                    return chr(0x1F1E6 + (ord(ch) - ord("A")))  # regional indicator 🇦-🇿
+
+        # Fallback if no A–Z exists (all numbers/emojis/etc.)
+        return "🅰️"
+
+
         # Deduct the bet amount from both players immediately
         remove_currency(ctx.author.name, amount)
         remove_currency(user_bet_against.name, amount)
@@ -122,13 +133,15 @@ class BetCog(commands.Cog):
                 bet_explanation = bet_data.get("explanation")
 
                 # Only process reactions from the opponent
-                if user != opponent:
+                if user.id != opponent.id:
                     return
+
 
                 if str(reaction.emoji) == "✅":
                     # Opponent accepted: send agreement embed asking for winner vote in the same channel
-                    challenger_emoji = chr(0x1F1E6 + (ord(challenger.name[0].upper()) - ord('A')))
-                    opponent_emoji = chr(0x1F1E6 + (ord(opponent.name[0].upper()) - ord('A')))
+                    challenger_emoji = self._letter_emoji_for(challenger)
+                    opponent_emoji = self._letter_emoji_for(opponent)
+
                     agreement_message = f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n\n"
                     if bet_explanation:
                         agreement_message += f"Bet Explanation: \n{bet_explanation}\n\n"
