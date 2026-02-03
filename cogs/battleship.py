@@ -521,8 +521,8 @@ class Battleship(commands.Cog):
                     loser = game.player1 if winner == game.player2 else game.player2
 
                     # Apply currency changes (use stable IDs, not usernames)
-                    add_currency(str(winner.id), GAME_WIN)
-                    remove_currency(str(loser.id), GAME_LOSE)
+                    add_currency(_user_key(winner), GAME_WIN)
+                    remove_currency(_user_key(loser), GAME_LOSE)
 
                     # Update Battleship win streaks
                     new_streak = increment_battleship_streak(winner)
