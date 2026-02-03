@@ -34,6 +34,7 @@ class Balance(commands.Cog):
             f"**XP:** {xp} / {needed}\n\n"
             f"**Wordle Streak:** `{data.get('wordle_streak', 0)}`\n"
             f"**Connect4 Streak:** `{data.get('connect4_streak', 0)}`"
+            f"**Battleship Win Streak:** `{data.get('battleship_streak', 0)}`\n"
         )
 
         embed = await create_embed(
