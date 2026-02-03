@@ -17,17 +17,23 @@ class BetCog(commands.Cog):
                 return chr(0x1F1E6 + (ord(ch) - ord("A")))
         return "🅰️"
 
-    async def manage_bet_lock(self, member: discord.abc.User, lock_status):
+    async def manage_bet_lock(self, member: discord.abc.User, lock_status: int):
         key = user_key(member)
         data = load_economy(key)
         data["bet_lock"] = lock_status
         save_economy(key, data)
 
-    async def can_place_bet(self, member: discord.abc.User):
+    async def can_place_bet(self, member: discord.abc.User) -> bool:
         data = load_economy(user_key(member))
         return data.get("bet_lock", 0) == 0
 
-    async def initiate_bet(self, ctx, amount, user_bet_against, bet_explanation=None):
+    async def initiate_bet(
+        self,
+        ctx: commands.Context,
+        amount: int,
+        user_bet_against: discord.abc.User,
+        bet_explanation: str | None = None
+    ):
         if not await self.can_place_bet(ctx.author):
             await ctx.send(f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first.")
             return
@@ -44,10 +50,16 @@ class BetCog(commands.Cog):
         await self.manage_bet_lock(ctx.author, 1)
         await self.manage_bet_lock(user_bet_against, 1)
 
-        bet_message = f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n\n"
+        bet_message = (
+            f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of "
+            f"{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n\n"
+        )
         if bet_explanation:
             bet_message += f"Bet Explanation: \n{bet_explanation}\n\n"
-        bet_message += f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
+        bet_message += (
+            f"Do you accept or decline, {user_bet_against.mention}? "
+            "React with ✅ to accept, ❌ to decline."
+        )
 
         bet_embed = await create_embed(
             title="Bet Challenge",
@@ -70,7 +82,14 @@ class BetCog(commands.Cog):
             "explanation": bet_explanation
         }
 
-    async def resolve_bet(self, ctx, winner, loser, amount, bet_explanation=None):
+    async def resolve_bet(
+        self,
+        ctx: commands.Context,
+        winner: discord.abc.User,
+        loser: discord.abc.User,
+        amount: int,
+        bet_explanation: str | None = None
+    ):
         add_currency(user_key(winner), 2 * amount)
         await self.manage_bet_lock(winner, 0)
         await self.manage_bet_lock(loser, 0)
@@ -94,7 +113,7 @@ class BetCog(commands.Cog):
 
     @commands.command()
     async def bet(self, ctx, amount: int, user_bet_against: discord.User, *, bet_explanation: str = None):
-        if ctx.author == user_bet_against:
+        if ctx.author.id == user_bet_against.id:
             await ctx.send("You can't bet against yourself!")
             return
 
@@ -106,7 +125,7 @@ class BetCog(commands.Cog):
         await self.initiate_bet(ctx, amount, user_bet_against, bet_explanation)
 
     @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
+    async def on_reaction_add(self, reaction, user: discord.User):
         if user.bot:
             return
 
@@ -134,7 +153,8 @@ class BetCog(commands.Cog):
                         agreement_message += f"Bet Explanation: \n{bet_explanation}\n\n"
 
                     agreement_message += (
-                        f"React with {challenger_emoji} for **{challenger.name}** or {opponent_emoji} for **{opponent.name}**."
+                        f"React with {challenger_emoji} for **{challenger.name}** "
+                        f"or {opponent_emoji} for **{opponent.name}**."
                     )
 
                     agreement_embed = await create_embed(
@@ -201,9 +221,12 @@ class BetCog(commands.Cog):
             for react in message.reactions:
                 if str(react.emoji) in [challenger_emoji, opponent_emoji]:
                     users_reacted = [u async for u in react.users() if not u.bot]
-                    if challenger in users_reacted and opponent in users_reacted:
+                    challenger_ok = any(u.id == challenger.id for u in users_reacted)
+                    opponent_ok = any(u.id == opponent.id for u in users_reacted)
+
+                    if challenger_ok and opponent_ok:
                         winner = challenger if str(react.emoji) == challenger_emoji else opponent
-                        loser = opponent if winner == challenger else challenger
+                        loser = opponent if winner.id == challenger.id else challenger
 
                         await self.resolve_bet(ctx, winner, loser, amount, bet_explanation)
                         del self.agreement_phase[message_id]
