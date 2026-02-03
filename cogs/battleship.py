@@ -9,7 +9,7 @@ from utils.economy import add_currency, remove_currency, load_economy, save_econ
 from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL, CURRENCY_SYMBOL
 
 def _user_key(member: discord.Member) -> str:
-    return str(member.id)
+    return member.name
 
 def increment_battleship_streak(member: discord.Member) -> int:
     """+1 the member's battleship win streak; returns new streak."""
