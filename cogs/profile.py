@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from config import CURRENCY_NAME, CURRENCY_SYMBOL
-from utils.economy import load_economy
+from utils.economy import load_economy, user_key
 from utils.embed import create_embed
 
 class Balance(commands.Cog):
@@ -16,10 +16,7 @@ class Balance(commands.Cog):
     async def profile(self, ctx, member: discord.Member | None = None):
         member = member or ctx.author
 
-        # Name-based economy key (matches your preference / existing files)
-        user_key = member.name
-
-        data = load_economy(user_key)
+        data = load_economy(user_key(member))
 
         lvl    = data.get("level", 1)
         xp     = data.get("xp", 0)
@@ -42,13 +39,11 @@ class Balance(commands.Cog):
             color=discord.Color.blue()
         )
 
-        # Optional: add avatar thumbnail for more “profile” feel
         if member.display_avatar:
             embed.set_thumbnail(url=member.display_avatar.url)
 
         await ctx.send(embed=embed)
 
-        # Safely attempt to delete the invoking message
         try:
             await ctx.message.delete()
         except (discord.NotFound, discord.Forbidden):
