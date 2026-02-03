@@ -6,6 +6,7 @@ import random
 from config import GAME_WIN, GAME_LOSE, ECONOMY_FOLDER, WORDLE_CHANNEL
 from utils import economy
 from utils.embed import create_embed
+from utils.economy import user_key
 
 MAX_ATTEMPTS = 6
 WORDLE_WORDS_FILE = os.path.join('data', 'wordle_words.txt')
@@ -51,7 +52,7 @@ class Wordle(commands.Cog):
     @commands.command(name="wordle")
     async def wordle(self, ctx):
         await ctx.message.delete()
-        username = ctx.author.name
+        username = user_key(ctx.author)
 
         # Get a random word from the file
         word = get_random_word_from_file()
@@ -67,7 +68,7 @@ class Wordle(commands.Cog):
     @commands.command(name="guess")
     async def guess(self, ctx, guess_word: str):
         await ctx.message.delete()
-        username = ctx.author.name
+        username = user_key(ctx.author)
         guess_word = guess_word.lower().strip()
 
         if username not in active_games:
