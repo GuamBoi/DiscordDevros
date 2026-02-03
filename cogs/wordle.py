@@ -99,7 +99,7 @@ class Wordle(commands.Cog):
             econ["wordle_streak"] = 0
             economy.save_economy(username, econ)
             economy.remove_currency(username, GAME_LOSE)
-            description += f"\n\nGame Over! The correct word was **{answer}**. You lost **{GAME_LOSE} {CURRENCY_NAME}**."
+            description += f"\n\nGame Over {ctx.author.mention}! The correct word was **{answer}**. You lost **{GAME_LOSE} {CURRENCY_NAME}**."
             del active_games[username]
 
         embed = await create_embed("Wordle Game", description)
