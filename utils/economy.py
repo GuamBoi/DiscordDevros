@@ -1,4 +1,5 @@
 import os
+import json
 from config import (
     ECONOMY_FOLDER,
     DEFAULT_CURRENCY_GIVE,
@@ -14,10 +15,19 @@ if not os.path.exists(ECONOMY_FOLDER):
 
 def sanitize_filename(username):
     """Sanitize username for filesystem use."""
-    return "".join(c if c.isalnum() or c in ('_', '-') else '_' for c in username)
+    return "".join(c if c.isalnum() or c in ("_", "-") else "_" for c in username)
+
+def _assert_name_key(username: str) -> None:
+    # Discord snowflakes are numeric and typically 17–20 digits.
+    if username.isdigit() and 17 <= len(username) <= 20:
+        raise ValueError(
+            f"Economy key looks like a Discord ID ({username}). "
+            "Use member.name (name-based economy) instead."
+        )
 
 def get_user_file(username):
     """Get full path for a user's economy JSON file."""
+    _assert_name_key(username)
     safe = sanitize_filename(username)
     return os.path.join(ECONOMY_FOLDER, f"{safe}.json")
 
@@ -29,7 +39,7 @@ def load_economy(username):
     """
     path = get_user_file(username)
     if os.path.exists(path):
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             return json.load(f)
 
     # New user: create default data
@@ -48,7 +58,7 @@ def load_economy(username):
 
 def save_economy(username, data):
     """Persist a user's economy data to disk."""
-    with open(get_user_file(username), 'w') as f:
+    with open(get_user_file(username), "w") as f:
         json.dump(data, f, indent=4)
 
 def add_currency(username, amount=DEFAULT_CURRENCY_GIVE):
@@ -90,7 +100,7 @@ def add_xp(username, amount):
     save_economy(username, data)
     return leveled_up, data["level"]
 
-# —————— Game‑specific Helpers ——————
+# —————— Game-specific Helpers ——————
 
 def get_wordle_streak(username):
     return load_economy(username).get("wordle_streak", 0)
@@ -110,7 +120,7 @@ def set_connect4_streak(username, streak):
     save_economy(username, data)
     return streak
 
-# —————— Role‑shop Helpers ——————
+# —————— Role-shop Helpers ——————
 
 def add_role(username, role_name):
     data = load_economy(username)
