@@ -4,7 +4,7 @@ import os
 import json
 from discord.ext import commands
 
-from utils.economy import add_currency, remove_currency, load_economy, save_economy
+from utils.economy import add_currency, remove_currency, load_economy, save_economy, user_key
 from utils.embed import create_embed
 from config import GAME_WIN, GAME_LOSE, CURRENCY_NAME, CONNECT4_CHANNEL, ECONOMY_FOLDER
 
@@ -149,15 +149,18 @@ class Connect4(commands.Cog):
         if game.winner:
             winner = game.winner
             loser = game.players[1 - game.players.index(winner)]
-            add_currency(winner.member.name, GAME_WIN)
-            remove_currency(loser.member.name, GAME_LOSE)
+
+            add_currency(user_key(winner.member), GAME_WIN)
+            remove_currency(user_key(loser.member), GAME_LOSE)
+
             # Update Connect4 streak for winner and reset for loser
-            winner_data = load_economy(winner.member.name)
+            winner_data = load_economy(user_key(winner.member))
             winner_data["connect4_streak"] = winner_data.get("connect4_streak", 0) + 1
-            save_economy(winner.member.name, winner_data)
-            loser_data = load_economy(loser.member.name)
+            save_economy(user_key(winner.member), winner_data)
+
+            loser_data = load_economy(user_key(loser.member))
             loser_data["connect4_streak"] = 0
-            save_economy(loser.member.name, loser_data)
+            save_economy(user_key(loser.member), loser_data)
 
             result_embed = await create_embed(
                 "Game Over",
