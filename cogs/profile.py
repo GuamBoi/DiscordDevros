@@ -16,9 +16,8 @@ class Balance(commands.Cog):
     async def profile(self, ctx, member: discord.Member | None = None):
         member = member or ctx.author
 
-        # Use a stable identifier (recommended). If your economy files currently key off name,
-        # you can temporarily use str(member.id) going forward while still supporting legacy.
-        user_key = str(member.id)
+        # Name-based economy key (matches your preference / existing files)
+        user_key = member.name
 
         data = load_economy(user_key)
 
