@@ -10,6 +10,10 @@ class BetCog(commands.Cog):
         self.active_bets = {}      # Active bet challenges (by message ID)
         self.agreement_phase = {}  # Active agreement messages (by message ID)
 
+    # ✅ NEW: single, standardized economy key for this cog (name-based)
+    def _user_key(self, user: discord.abc.User) -> str:
+        return user.name
+
     # ✅ MOVED HERE (real class method now)
     def _letter_emoji_for(self, user: discord.abc.User) -> str:
         raw = getattr(user, "display_name", None) or user.name
@@ -18,35 +22,38 @@ class BetCog(commands.Cog):
                 return chr(0x1F1E6 + (ord(ch) - ord("A")))
         return "🅰️"
 
-    async def manage_bet_lock(self, username, lock_status):
-        data = load_economy(username)
-        data['bet_lock'] = lock_status
-        save_economy(username, data)
+    async def manage_bet_lock(self, user: discord.abc.User, lock_status):
+        key = self._user_key(user)
+        data = load_economy(key)
+        data["bet_lock"] = lock_status
+        save_economy(key, data)
 
-    async def can_place_bet(self, username):
-        data = load_economy(username)
-        return data.get('bet_lock', 0) == 0
+    async def can_place_bet(self, user: discord.abc.User):
+        key = self._user_key(user)
+        data = load_economy(key)
+        return data.get("bet_lock", 0) == 0
 
     async def initiate_bet(self, ctx, amount, user_bet_against, bet_explanation=None):
-        if not await self.can_place_bet(ctx.author.name):
+        if not await self.can_place_bet(ctx.author):
             await ctx.send(f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first.")
             return
-        if not await self.can_place_bet(user_bet_against.name):
+        if not await self.can_place_bet(user_bet_against):
             await ctx.send(f"{user_bet_against.mention} is locked from placing bets. They need to resolve their previous bet first.")
             return
         if amount <= 0:
             await ctx.send("You must bet a positive amount!")
             return
 
-        # (nested _letter_emoji_for REMOVED)
+        remove_currency(self._user_key(ctx.author), amount)
+        remove_currency(self._user_key(user_bet_against), amount)
 
-        remove_currency(ctx.author.name, amount)
-        remove_currency(user_bet_against.name, amount)
+        await self.manage_bet_lock(ctx.author, 1)
+        await self.manage_bet_lock(user_bet_against, 1)
 
-        await self.manage_bet_lock(ctx.author.name, 1)
-        await self.manage_bet_lock(user_bet_against.name, 1)
-
-        bet_message = f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of {CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n\n"
+        bet_message = (
+            f"{ctx.author.mention} has challenged {user_bet_against.mention} to a bet of "
+            f"{CURRENCY_SYMBOL}{amount} {CURRENCY_NAME}!\n\n"
+        )
         if bet_explanation:
             bet_message += f"Bet Explanation: \n{bet_explanation}\n\n"
         bet_message += f"Do you accept or decline, {user_bet_against.mention}? React with ✅ to accept, ❌ to decline."
@@ -73,9 +80,9 @@ class BetCog(commands.Cog):
         }
 
     async def resolve_bet(self, ctx, winner, loser, amount, bet_explanation=None):
-        add_currency(winner.name, 2 * amount)
-        await self.manage_bet_lock(winner.name, 0)
-        await self.manage_bet_lock(loser.name, 0)
+        add_currency(self._user_key(winner), 2 * amount)
+        await self.manage_bet_lock(winner, 0)
+        await self.manage_bet_lock(loser, 0)
 
         resolution_description = (
             f"{winner.mention} wins the bet! {CURRENCY_SYMBOL}{2 * amount} {CURRENCY_NAME} has been transferred to them!\n"
@@ -178,22 +185,22 @@ class BetCog(commands.Cog):
                     )
 
                     await channel.send(embed=refund_embed)
-                    add_currency(challenger.name, amount)
-                    add_currency(opponent.name, amount)
-                    await self.manage_bet_lock(challenger.name, 0)
-                    await self.manage_bet_lock(opponent.name, 0)
+                    add_currency(self._user_key(challenger), amount)
+                    add_currency(self._user_key(opponent), amount)
+                    await self.manage_bet_lock(challenger, 0)
+                    await self.manage_bet_lock(opponent, 0)
 
                     await reaction.message.delete()
                     del self.active_bets[message_id]
 
         elif message_id in self.agreement_phase:
             agreement_data = self.agreement_phase[message_id]
-            challenger = agreement_data['challenger']
-            opponent = agreement_data['opponent']
-            ctx = agreement_data['ctx']
-            amount = agreement_data['amount']
-            challenger_emoji = agreement_data['challenger_emoji']
-            opponent_emoji = agreement_data['opponent_emoji']
+            challenger = agreement_data["challenger"]
+            opponent = agreement_data["opponent"]
+            ctx = agreement_data["ctx"]
+            amount = agreement_data["amount"]
+            challenger_emoji = agreement_data["challenger_emoji"]
+            opponent_emoji = agreement_data["opponent_emoji"]
             bet_explanation = agreement_data.get("explanation")
 
             if str(reaction.emoji) not in [challenger_emoji, opponent_emoji]:
