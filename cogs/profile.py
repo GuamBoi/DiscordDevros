@@ -33,7 +33,7 @@ class Balance(commands.Cog):
             f"**Level:** {lvl}\n"
             f"**XP:** {xp} / {needed}\n\n"
             f"**Wordle Streak:** `{data.get('wordle_streak', 0)}`\n"
-            f"**Connect4 Streak:** `{data.get('connect4_streak', 0)}`"
+            f"**Connect4 Streak:** `{data.get('connect4_streak', 0)}`\n"
             f"**Battleship Win Streak:** `{data.get('battleship_streak', 0)}`\n"
         )
 
