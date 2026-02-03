@@ -8,6 +8,24 @@ from utils.economy import add_currency, remove_currency, load_economy, save_econ
 # Make sure you have CURRENCY_SYMBOL in your config.py
 from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL, CURRENCY_SYMBOL
 
+def _user_key(member: discord.Member) -> str:
+    return str(member.id)
+
+def increment_battleship_streak(member: discord.Member) -> int:
+    """+1 the member's battleship win streak; returns new streak."""
+    key = _user_key(member)
+    data = load_economy(key)
+    data["battleship_streak"] = data.get("battleship_streak", 0) + 1
+    save_economy(key, data)
+    return data["battleship_streak"]
+
+def reset_battleship_streak(member: discord.Member) -> None:
+    """Reset the member's battleship win streak to 0."""
+    key = _user_key(member)
+    data = load_economy(key)
+    data["battleship_streak"] = 0
+    save_economy(key, data)
+
 # --- Constants & Helper Functions ---
 
 EMPTY_CELL = ":white_large_square:"       # Open ocean
@@ -502,9 +520,13 @@ class Battleship(commands.Cog):
                 if winner:
                     loser = game.player1 if winner == game.player2 else game.player2
 
-                    # Apply currency changes
-                    add_currency(winner.name, GAME_WIN)
-                    remove_currency(loser.name, GAME_LOSE)
+                    # Apply currency changes (use stable IDs, not usernames)
+                    add_currency(str(winner.id), GAME_WIN)
+                    remove_currency(str(loser.id), GAME_LOSE)
+
+                    # Update Battleship win streaks
+                    new_streak = increment_battleship_streak(winner)
+                    reset_battleship_streak(loser)
 
                     channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
                     # 1) Plain text line for final boards
