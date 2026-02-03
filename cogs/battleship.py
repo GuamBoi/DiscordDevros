@@ -4,12 +4,11 @@ import asyncio
 import re
 
 from utils.embed import create_embed
-from utils.economy import add_currency, remove_currency, load_economy, save_economy
-# Make sure you have CURRENCY_SYMBOL in your config.py
+from utils.economy import add_currency, remove_currency, load_economy, save_economy, user_key
 from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL, CURRENCY_SYMBOL
 
 def _user_key(member: discord.Member) -> str:
-    return member.name
+    return user_key(member)
 
 def increment_battleship_streak(member: discord.Member) -> int:
     """+1 the member's battleship win streak; returns new streak."""
