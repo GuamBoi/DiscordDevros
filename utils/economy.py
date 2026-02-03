@@ -9,6 +9,9 @@ from config import (
     LEVEL_UP_REWARD_MULTIPLIER
 )
 
+def user_key(member):                        # Centralized economy identity. Currently uses Discord username. Change here if you ever migrate.
+    return member.name
+
 # Ensure the economy folder exists
 if not os.path.exists(ECONOMY_FOLDER):
     os.makedirs(ECONOMY_FOLDER)
