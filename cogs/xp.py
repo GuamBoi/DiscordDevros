@@ -11,7 +11,7 @@ from config import (
     CURRENCY_NAME, 
     CURRENCY_SYMBOL,
 )
-from utils.economy import add_xp
+from utils.economy import add_xp, user_key
 from utils.embed import create_embed
 
 class XP(commands.Cog):
@@ -49,7 +49,7 @@ class XP(commands.Cog):
         if not ENABLE_XP_SYSTEM or message.author.bot:
             return
 
-        leveled, new_level = add_xp(message.author.name, XP_PER_MESSAGE)
+        leveled, new_level = add_xp(user_key(message.author), XP_PER_MESSAGE)
         if leveled:
             await self.send_level_up_message(message.author, new_level, message.channel)
 
@@ -58,7 +58,7 @@ class XP(commands.Cog):
         if not ENABLE_XP_SYSTEM or user.bot:
             return
 
-        leveled, new_level = add_xp(user.name, XP_PER_REACTION)
+        leveled, new_level = add_xp(user_key(user), XP_PER_REACTION)
         if leveled:
             await self.send_level_up_message(user, new_level, reaction.message.channel)
 
@@ -67,7 +67,7 @@ class XP(commands.Cog):
         if not ENABLE_XP_SYSTEM or ctx.author.bot:
             return
 
-        leveled, new_level = add_xp(ctx.author.name, XP_PER_COMMAND)
+        leveled, new_level = add_xp(user_key(ctx.author), XP_PER_COMMAND)
         if leveled:
             await self.send_level_up_message(ctx.author, new_level, ctx.channel)
 
