@@ -215,7 +215,7 @@ async def update_turn_prompt(game: BattleshipGame, bot: discord.Client):
     else:
         shot_board = game.shots2
         active = game.player2
-    prompt_text = (f"{active.mention}, it's your turn! Use !fire <cell> to take your shot.\n\n"
+    prompt_text = (f"{active.mention}, it's your turn! Use `!fire <cell>` to take your shot.\n\n"
                    f"Your guessed board:\n{game.board_to_string(shot_board)}")
     embed = await create_embed("Battleship - Turn Prompt", prompt_text)
     channel = bot.get_channel(BATTLESHIP_CHANNEL)
