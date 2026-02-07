@@ -16,11 +16,13 @@ ConnectBoard = "<:ConnectBoard:1213906784821977118>"
 ConnectRed = "<:ConnectRed:1213906783437848616>"
 ConnectYellow = "<:ConnectYellow:1213906785941987399>"
 
+
 # Player class to track players
 class Connect4Player:
     def __init__(self, member, token_emoji):
         self.member = member
         self.token_emoji = token_emoji
+
 
 # The game logic encapsulated in a class
 class Connect4Game:
@@ -75,6 +77,7 @@ class Connect4Game:
                 return True
         return False
 
+
 # Cog to hold the Connect4 commands
 class Connect4(commands.Cog):
     def __init__(self, bot):
@@ -114,7 +117,10 @@ class Connect4(commands.Cog):
         game = Connect4Game(player1, player2)
 
         board_embed = await self.create_game_board_embed(game)
-        game_message = await channel.send(f"{game.players[game.turn].member.mention}, it's your turn!", embed=board_embed)
+        game_message = await channel.send(
+            f"{game.players[game.turn].member.mention}, it's your turn!",
+            embed=board_embed
+        )
 
         # Add number reactions (for columns 1-7)
         for emoji in number_emojis:
@@ -130,7 +136,7 @@ class Connect4(commands.Cog):
 
         # Main game loop (no timeout so users can play at their own pace)
         while game.active:
-            reaction, user = await self.bot.wait_for('reaction_add', check=check)
+            reaction, user = await self.bot.wait_for("reaction_add", check=check)
             column = number_emojis.index(str(reaction.emoji))
             error = await game.make_move(column, ctx)
             if error:
@@ -138,7 +144,11 @@ class Connect4(commands.Cog):
             else:
                 new_embed = await self.create_game_board_embed(game)
                 # Ping the current player for their turn
-                await game_message.edit(content=f"{game.players[game.turn].member.mention}, it's your turn!", embed=new_embed)
+                await game_message.edit(
+                    content=f"{game.players[game.turn].member.mention}, it's your turn!",
+                    embed=new_embed
+                )
+
             # Remove the reaction so players can reuse it in future moves
             try:
                 await game_message.remove_reaction(reaction.emoji, user)
@@ -150,17 +160,20 @@ class Connect4(commands.Cog):
             winner = game.winner
             loser = game.players[1 - game.players.index(winner)]
 
-            add_currency(user_key(winner.member), GAME_WIN)
-            remove_currency(user_key(loser.member), GAME_LOSE)
+            winner_key = user_key(winner.member)
+            loser_key = user_key(loser.member)
+
+            add_currency(winner_key, GAME_WIN)
+            remove_currency(loser_key, GAME_LOSE)
 
             # Update Connect4 streak for winner and reset for loser
-            winner_data = load_economy(user_key(winner.member))
+            winner_data = load_economy(winner_key)
             winner_data["connect4_streak"] = winner_data.get("connect4_streak", 0) + 1
-            save_economy(user_key(winner.member), winner_data)
+            save_economy(winner_key, winner_data)
 
-            loser_data = load_economy(user_key(loser.member))
+            loser_data = load_economy(loser_key)
             loser_data["connect4_streak"] = 0
-            save_economy(user_key(loser.member), loser_data)
+            save_economy(loser_key, loser_data)
 
             result_embed = await create_embed(
                 "Game Over",
@@ -180,28 +193,39 @@ class Connect4(commands.Cog):
         await ctx.message.delete()
 
         leaderboard = []
-        # Iterate over all economy files
+
+        # Iterate over all economy files (now ID-keyed)
         for filename in os.listdir(ECONOMY_FOLDER):
-            if filename.endswith(".json"):
-                filepath = os.path.join(ECONOMY_FOLDER, filename)
-                with open(filepath, 'r') as f:
+            if not filename.endswith(".json"):
+                continue
+
+            user_id_str = filename[:-5]  # strip .json
+            if not user_id_str.isdigit():
+                continue
+
+            filepath = os.path.join(ECONOMY_FOLDER, filename)
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                streak = data.get("connect4_streak", 0)
-                username = data.get("username", "Unknown")
-                leaderboard.append((username, streak))
-        # Sort by streak descending
+            except Exception:
+                continue
+
+            streak = int(data.get("connect4_streak", 0) or 0)
+            leaderboard.append((int(user_id_str), streak))
+
         leaderboard.sort(key=lambda x: x[1], reverse=True)
         top10 = leaderboard[:10]
 
         description = ""
-        for idx, (username, streak) in enumerate(top10, start=1):
-            # Try to get the guild member to mention them; fallback to username if not found
-            member = ctx.guild.get_member_named(username)
-            mention = member.mention if member else username
-            description += f"**{idx}.** {mention} - `{streak}`\n"
+        for idx, (user_id, streak) in enumerate(top10, start=1):
+            member = ctx.guild.get_member(user_id)
+            mention = member.mention if member else f"`{user_id}`"
+            display = member.display_name if member else "Unknown Member"
+            description += f"**{idx}.** {mention} ({display}) - `{streak}`\n"
 
         embed = await create_embed("Connect4 Leaderboard", description, color=discord.Color.gold())
         await ctx.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(Connect4(bot))
