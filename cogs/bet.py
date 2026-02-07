@@ -1,8 +1,10 @@
 import discord
 from discord.ext import commands
+
 from utils.economy import load_economy, save_economy, add_currency, remove_currency, user_key
 from utils.embed import create_embed
 from config import BETTING_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
+
 
 class BetCog(commands.Cog):
     def __init__(self, bot):
@@ -18,13 +20,15 @@ class BetCog(commands.Cog):
         return "🅰️"
 
     async def manage_bet_lock(self, member: discord.abc.User, lock_status: int):
+        # ID-keyed economy: pass the key into economy functions
         key = user_key(member)
         data = load_economy(key)
         data["bet_lock"] = lock_status
         save_economy(key, data)
 
     async def can_place_bet(self, member: discord.abc.User) -> bool:
-        data = load_economy(user_key(member))
+        key = user_key(member)
+        data = load_economy(key)
         return data.get("bet_lock", 0) == 0
 
     async def initiate_bet(
@@ -35,17 +39,24 @@ class BetCog(commands.Cog):
         bet_explanation: str | None = None
     ):
         if not await self.can_place_bet(ctx.author):
-            await ctx.send(f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first.")
+            await ctx.send(
+                f"{ctx.author.mention}, you are locked from placing bets. Resolve your previous bet first."
+            )
             return
         if not await self.can_place_bet(user_bet_against):
-            await ctx.send(f"{user_bet_against.mention} is locked from placing bets. They need to resolve their previous bet first.")
+            await ctx.send(
+                f"{user_bet_against.mention} is locked from placing bets. They need to resolve their previous bet first."
+            )
             return
         if amount <= 0:
             await ctx.send("You must bet a positive amount!")
             return
 
-        remove_currency(user_key(ctx.author), amount)
-        remove_currency(user_key(user_bet_against), amount)
+        challenger_key = user_key(ctx.author)
+        opponent_key = user_key(user_bet_against)
+
+        remove_currency(challenger_key, amount)
+        remove_currency(opponent_key, amount)
 
         await self.manage_bet_lock(ctx.author, 1)
         await self.manage_bet_lock(user_bet_against, 1)
@@ -90,7 +101,11 @@ class BetCog(commands.Cog):
         amount: int,
         bet_explanation: str | None = None
     ):
-        add_currency(user_key(winner), 2 * amount)
+        winner_key = user_key(winner)
+
+        # Winner gets the full pot (both stakes) = 2 * amount
+        add_currency(winner_key, 2 * amount)
+
         await self.manage_bet_lock(winner, 0)
         await self.manage_bet_lock(loser, 0)
 
@@ -148,7 +163,9 @@ class BetCog(commands.Cog):
                     challenger_emoji = self._letter_emoji_for(challenger)
                     opponent_emoji = self._letter_emoji_for(opponent)
 
-                    agreement_message = f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n\n"
+                    agreement_message = (
+                        f"{challenger.mention} and {opponent.mention}, please vote on the winner of the bet.\n\n"
+                    )
                     if bet_explanation:
                         agreement_message += f"Bet Explanation: \n{bet_explanation}\n\n"
 
@@ -196,8 +213,10 @@ class BetCog(commands.Cog):
                     )
 
                     await channel.send(embed=refund_embed)
+
                     add_currency(user_key(challenger), amount)
                     add_currency(user_key(opponent), amount)
+
                     await self.manage_bet_lock(challenger, 0)
                     await self.manage_bet_lock(opponent, 0)
 
@@ -231,6 +250,7 @@ class BetCog(commands.Cog):
                         await self.resolve_bet(ctx, winner, loser, amount, bet_explanation)
                         del self.agreement_phase[message_id]
                         return
+
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
