@@ -7,8 +7,10 @@ from utils.embed import create_embed
 from utils.economy import add_currency, remove_currency, load_economy, save_economy, user_key
 from config import GAME_WIN, GAME_LOSE, BATTLESHIP_CHANNEL, CURRENCY_SYMBOL
 
+
 def _user_key(member: discord.Member) -> str:
     return user_key(member)
+
 
 def increment_battleship_streak(member: discord.Member) -> int:
     """+1 the member's battleship win streak; returns new streak."""
@@ -18,12 +20,14 @@ def increment_battleship_streak(member: discord.Member) -> int:
     save_economy(key, data)
     return data["battleship_streak"]
 
+
 def reset_battleship_streak(member: discord.Member) -> None:
     """Reset the member's battleship win streak to 0."""
     key = _user_key(member)
     data = load_economy(key)
     data["battleship_streak"] = 0
     save_economy(key, data)
+
 
 # --- Constants & Helper Functions ---
 
@@ -34,10 +38,10 @@ MISS_CELL = ":blue_square:"               # Miss – also used for header alignm
 
 # Arrow emojis used as cursor; also indicate orientation.
 CURSOR_EMOJIS = {
-    "left": ":rewind:",
-    "up": ":arrow_double_up:",
-    "right": ":fast_forward:",
-    "down": ":arrow_double_down:"
+    "left": "⏪",
+    "up": "⏫",
+    "right": "⏩",
+    "down": "⏬"
 }
 
 # Valid orientations in order.
@@ -53,6 +57,7 @@ LETTER_EMOJIS = {
     "F": "🇫", "G": "🇬", "H": "🇭", "I": "🇮", "J": "🇯"
 }
 
+# Fix: correct 1-10 mapping (your pasted code had an 8 twice)
 NUMBER_EMOJIS = {
     "1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣",
     "6": "6️⃣", "7": "7️⃣", "8": "8️⃣", "9": "9️⃣", "10": "🔟"
@@ -60,6 +65,7 @@ NUMBER_EMOJIS = {
 
 def coords_to_label(row, col):
     return f"{ROWS[row]}{col+1}"
+
 
 # --- Battleship Game State Class ---
 
@@ -180,6 +186,7 @@ class BattleshipGame:
         row_letter = m.group(1).upper()
         col = int(m.group(2)) - 1
         row = ROWS.index(row_letter)
+
         if player == self.player1:
             opp_board = self.board2
             shot_board = self.shots1
@@ -188,8 +195,10 @@ class BattleshipGame:
             opp_board = self.board1
             shot_board = self.shots2
             ships = self.ships1
+
         if opp_board[row][col] in [HIT_CELL, MISS_CELL]:
             return "You already fired at that cell."
+
         hit = False
         for ship_coords_list in ships.values():
             for coords in ship_coords_list:
@@ -200,10 +209,13 @@ class BattleshipGame:
                     break
             if hit:
                 break
+
         if not hit:
             opp_board[row][col] = MISS_CELL
             shot_board[row][col] = MISS_CELL
+
         return "hit" if hit else "miss"
+
 
 # --- Persistent Turn Prompt Function ---
 
@@ -215,8 +227,11 @@ async def update_turn_prompt(game: BattleshipGame, bot: discord.Client):
     else:
         shot_board = game.shots2
         active = game.player2
-    prompt_text = (f"{active.mention}, it's your turn! Use `!fire <cell>` to take your shot.\n\n"
-                   f"Your guessed board:\n{game.board_to_string(shot_board)}")
+
+    prompt_text = (
+        f"{active.mention}, it's your turn! Use `!fire <cell>` to take your shot.\n\n"
+        f"Your guessed board:\n{game.board_to_string(shot_board)}"
+    )
     embed = await create_embed("Battleship - Turn Prompt", prompt_text)
     channel = bot.get_channel(BATTLESHIP_CHANNEL)
     if game.prompt_message is None:
@@ -224,11 +239,11 @@ async def update_turn_prompt(game: BattleshipGame, bot: discord.Client):
     else:
         await game.prompt_message.edit(embed=embed)
 
+
 # --- Persistent Ship Placement UI ---
 
 class ShipSizeSelect(discord.ui.Select):
     def __init__(self, placed_ships, requirements):
-        # Build options based on each ship size, showing placed count vs requirement.
         options = []
         for size in sorted(requirements.keys()):
             count = placed_ships[size]
@@ -238,19 +253,20 @@ class ShipSizeSelect(discord.ui.Select):
         super().__init__(placeholder="Select a ship to place or remove", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        view: PersistentShipPlacementView = self.view
+        view: "PersistentShipPlacementView" = self.view
         size = int(self.values[0])
-        # Check if this ship size is already fully placed.
+
         if view.placed_ships[size] >= view.game.ship_requirements[size]:
             await interaction.response.send_message(
                 f"All required ships of size {size} are already placed. Use the Remove button to reposition one.",
                 ephemeral=True
             )
             return
-        # Set the current ship size immediately and defer the response.
+
         view.current_ship_size = size
         await interaction.response.defer(ephemeral=True)
         await view.update_message(interaction)
+
 
 class FinishBattlefieldButton(discord.ui.Button):
     def __init__(self, parent_view: "PersistentShipPlacementView"):
@@ -258,7 +274,6 @@ class FinishBattlefieldButton(discord.ui.Button):
         self.parent_view = parent_view
 
     async def callback(self, interaction: discord.Interaction):
-        # Ensure for each ship size the placed count meets the requirement.
         for size, req in self.parent_view.game.ship_requirements.items():
             if self.parent_view.placed_ships[size] < req:
                 await interaction.response.send_message(
@@ -266,15 +281,17 @@ class FinishBattlefieldButton(discord.ui.Button):
                     ephemeral=True
                 )
                 return
+
         self.parent_view.game.placement_ready[self.parent_view.player] = True
         channel = self.parent_view.bot.get_channel(BATTLESHIP_CHANNEL)
-        # Send an embed announcing that this player has finished placing ships.
+
         finish_embed = await create_embed(
             "Battleship - Ship Placement Complete",
             f"{interaction.user.mention} has finished placing their ships and is waiting on the other player.",
             color=discord.Color.blue()
         )
         await channel.send(embed=finish_embed)
+
         try:
             if not interaction.response.is_done():
                 await interaction.response.send_message(
@@ -288,7 +305,9 @@ class FinishBattlefieldButton(discord.ui.Button):
                 )
         except Exception:
             pass
+
         self.parent_view.stop()
+
 
 class PersistentShipPlacementView(discord.ui.View):
     def __init__(self, game: BattleshipGame, player: discord.Member):
@@ -298,7 +317,6 @@ class PersistentShipPlacementView(discord.ui.View):
         self.bot = game.player1.guild if hasattr(game.player1, "guild") else None
         self.cursor = (0, 0)
         self.orientation = "right"
-        # Instead of a boolean flag per ship size, track count placed.
         self.placed_ships = {size: 0 for size in game.ship_requirements}
         self.current_ship_size = None
         self.add_item(ShipSizeSelect(self.placed_ships, game.ship_requirements))
@@ -318,10 +336,12 @@ class PersistentShipPlacementView(discord.ui.View):
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         cursor_data = (self.cursor, CURSOR_EMOJIS[self.orientation])
         board_str = self.game.placement_board_to_string(board, cursor_data=cursor_data)
+
         if self.current_ship_size:
             header = f"Placing ship of size {self.current_ship_size}.\n"
         else:
             header = "Select a ship size to place or remove from the dropdown below.\n"
+
         text = (
             header +
             f"Current starting cell: {coords_to_label(*self.cursor)}\n"
@@ -330,6 +350,7 @@ class PersistentShipPlacementView(discord.ui.View):
             board_str
         )
         embed = await create_embed("Battleship - Ship Placement", text)
+
         try:
             if not interaction.response.is_done():
                 await interaction.response.edit_message(embed=embed, view=self)
@@ -381,18 +402,20 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size is None:
             await interaction.response.send_message("Please select a ship size first.", ephemeral=True)
             return
-        # Check if we can still place another ship of this size.
+
         if self.placed_ships[self.current_ship_size] >= self.game.ship_requirements[self.current_ship_size]:
             await interaction.response.send_message(
                 f"All required ships of size {self.current_ship_size} are already placed.",
                 ephemeral=True
             )
             return
+
         board = self.game.board1 if self.player == self.game.player1 else self.game.board2
         coords = self.game.can_place_ship(board, self.cursor[0], self.cursor[1], self.current_ship_size, self.orientation)
         if coords is None:
             await interaction.response.send_message("Invalid placement: Out of bounds or overlapping.", ephemeral=True)
             return
+
         self.game.place_ship(self.player, self.current_ship_size, coords)
         self.placed_ships[self.current_ship_size] += 1
         self.current_ship_size = None
@@ -404,13 +427,14 @@ class PersistentShipPlacementView(discord.ui.View):
         if self.current_ship_size is None:
             await interaction.response.send_message("Select the ship size you want to remove.", ephemeral=True)
             return
+
         if self.placed_ships[self.current_ship_size] <= 0:
             await interaction.response.send_message(
                 f"No ship of size {self.current_ship_size} is placed.",
                 ephemeral=True
             )
             return
-        board = self.game.board1 if self.player == self.game.player1 else self.game.board2
+
         removed = self.game.remove_ship(self.player, self.current_ship_size)
         if removed:
             self.placed_ships[self.current_ship_size] -= 1
@@ -420,29 +444,31 @@ class PersistentShipPlacementView(discord.ui.View):
             )
         else:
             await interaction.response.send_message("Failed to remove ship.", ephemeral=True)
+
         self.current_ship_size = None
         await self.update_select_menu()
         await self.update_message(interaction)
+
 
 # --- Battleship Cog ---
 
 class Battleship(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Active games keyed by tuple(sorted(player1.id, player2.id))
-        self.games = {}
+        self.games = {}  # Active games keyed by tuple(sorted(player1.id, player2.id))
 
     @commands.command(name="battleship")
     async def battleship(self, ctx, opponent: discord.Member):
         """Start a Battleship game with the tagged opponent."""
         await ctx.message.delete()
+
         if opponent == ctx.author:
             await ctx.send("You cannot play against yourself!")
             return
 
         game = BattleshipGame(ctx.author, opponent)
-        key = tuple(sorted([ctx.author.id, opponent.id]))
-        self.games[key] = game
+        game_key = tuple(sorted([ctx.author.id, opponent.id]))
+        self.games[game_key] = game
 
         # Send one persistent ship placement DM to each player.
         try:
@@ -464,7 +490,9 @@ class Battleship(commands.Cog):
 
         # Transition to firing phase in the battleship channel.
         game.phase = "firing"
-        game.current_turn = ctx.author  # Let challenger start
+
+        # CHANGE: tagged opponent goes first
+        game.current_turn = opponent
 
         # Send each player their boards via DM.
         board_embed1 = await create_embed("Battleship - Your Board", game.board_to_string(game.board1))
@@ -479,97 +507,82 @@ class Battleship(commands.Cog):
     async def fire(self, ctx, target: str):
         """Fire at a cell (e.g. !fire A1). Command message is deleted."""
         await ctx.message.delete()
-        for key, game in self.games.items():
-            if ctx.author.id in key:
-                if game.phase != "firing":
-                    await ctx.send("The game is not in the firing phase.")
-                    return
-                if ctx.author != game.current_turn:
-                    await ctx.send("It is not your turn.")
-                    return
 
-                result = game.fire(ctx.author, target)
-                if result not in ["hit", "miss"]:
-                    await ctx.send(result)
-                    return
+        for game_key, game in list(self.games.items()):
+            if ctx.author.id not in game_key:
+                continue
 
-                # If the shot was a hit, check if any ship was sunk.
-                if result == "hit":
-                    opponent = game.player2 if ctx.author == game.player1 else game.player1
-                    opp_board = game.board2 if ctx.author == game.player1 else game.board1
-                    opponent_ships = game.ships2 if ctx.author == game.player1 else game.ships1
-                    sunk_list = game.sunk_ships[opponent]
-
-                    for size, ships in opponent_ships.items():
-                        for ship in ships:
-                            if ship not in sunk_list:
-                                if all(opp_board[r][c] == HIT_CELL for r, c in ship):
-                                    sunk_list.append(ship)
-                                    embed = await create_embed(
-                                        "Battleship - Ship Sunk",
-                                        f"{ctx.author.mention} has sunk {opponent.mention}'s ship of size {size}!",
-                                        color=discord.Color.red()
-                                    )
-                                    channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-                                    # Auto-delete the sunk ship announcement after 60 seconds
-                                    await channel.send(embed=embed, delete_after=60)
-
-                # Check for win condition.
-                winner = self.check_win(game)
-                if winner:
-                    loser = game.player1 if winner == game.player2 else game.player2
-
-                    # Apply currency changes (use stable IDs, not usernames)
-                    add_currency(_user_key(winner), GAME_WIN)
-                    remove_currency(_user_key(loser), GAME_LOSE)
-
-                    # Update Battleship win streaks
-                    new_streak = increment_battleship_streak(winner)
-                    reset_battleship_streak(loser)
-
-                    channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
-                    # 1) Plain text line for final boards
-                    await channel.send(
-                        f"Final Boards for Battleship game between {game.player1.mention} and {game.player2.mention}:"
-                    )
-
-                    # 2) Send each player's final board as a separate embed
-                    final_board1 = await create_embed(
-                        "Battleship - Final Board",
-                        game.board_to_string(game.board1)
-                    )
-                    final_board2 = await create_embed(
-                        "Battleship - Final Board",
-                        game.board_to_string(game.board2)
-                    )
-                    await channel.send(embed=final_board1)
-                    await channel.send(embed=final_board2)
-
-                    # 3) Send the game-over embed with currency results
-                    description_text = (
-                        f"{winner.mention} beat {loser.mention} in Battleship!\n\n"
-                        f"**{winner.display_name}** won {CURRENCY_SYMBOL}{GAME_WIN}\n"
-                        f"**{loser.display_name}** lost {CURRENCY_SYMBOL}{GAME_LOSE}\n\n"
-                        "Thanks for playing!"
-                    )
-                    final_embed = await create_embed(
-                        "Battleship - Game Over",
-                        description_text,
-                        color=discord.Color.blue()
-                    )
-                    await channel.send(embed=final_embed)
-
-                    # Remove the game from active games
-                    del self.games[key]
-                    return
-
-                # If the result is a hit, allow the same player to shoot again.
-                # Otherwise (miss), switch turn.
-                if result == "miss":
-                    game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
-
-                await update_turn_prompt(game, self.bot)
+            if game.phase != "firing":
+                await ctx.send("The game is not in the firing phase.")
                 return
+
+            if ctx.author != game.current_turn:
+                await ctx.send("It is not your turn.")
+                return
+
+            result = game.fire(ctx.author, target)
+            if result not in ["hit", "miss"]:
+                await ctx.send(result)
+                return
+
+            # If the shot was a hit, check if any ship was sunk.
+            if result == "hit":
+                opponent = game.player2 if ctx.author == game.player1 else game.player1
+                opp_board = game.board2 if ctx.author == game.player1 else game.board1
+                opponent_ships = game.ships2 if ctx.author == game.player1 else game.ships1
+                sunk_list = game.sunk_ships[opponent]
+
+                for size, ships in opponent_ships.items():
+                    for ship in ships:
+                        if ship not in sunk_list and all(opp_board[r][c] == HIT_CELL for r, c in ship):
+                            sunk_list.append(ship)
+                            embed = await create_embed(
+                                "Battleship - Ship Sunk",
+                                f"{ctx.author.mention} has sunk {opponent.mention}'s ship of size {size}!",
+                                color=discord.Color.red()
+                            )
+                            channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
+                            await channel.send(embed=embed, delete_after=60)
+
+            # Check for win condition.
+            winner = self.check_win(game)
+            if winner:
+                loser = game.player1 if winner == game.player2 else game.player2
+
+                add_currency(_user_key(winner), GAME_WIN)
+                remove_currency(_user_key(loser), GAME_LOSE)
+
+                increment_battleship_streak(winner)
+                reset_battleship_streak(loser)
+
+                channel = self.bot.get_channel(BATTLESHIP_CHANNEL)
+                await channel.send(
+                    f"Final Boards for Battleship game between {game.player1.mention} and {game.player2.mention}:"
+                )
+
+                final_board1 = await create_embed("Battleship - Final Board", game.board_to_string(game.board1))
+                final_board2 = await create_embed("Battleship - Final Board", game.board_to_string(game.board2))
+                await channel.send(embed=final_board1)
+                await channel.send(embed=final_board2)
+
+                description_text = (
+                    f"{winner.mention} beat {loser.mention} in Battleship!\n\n"
+                    f"**{winner.display_name}** won {CURRENCY_SYMBOL}{GAME_WIN}\n"
+                    f"**{loser.display_name}** lost {CURRENCY_SYMBOL}{GAME_LOSE}\n\n"
+                    "Thanks for playing!"
+                )
+                final_embed = await create_embed("Battleship - Game Over", description_text, color=discord.Color.blue())
+                await channel.send(embed=final_embed)
+
+                del self.games[game_key]
+                return
+
+            # If miss, switch turn; if hit, same player continues
+            if result == "miss":
+                game.current_turn = game.player1 if ctx.author == game.player2 else game.player2
+
+            await update_turn_prompt(game, self.bot)
+            return
 
         await ctx.send("No active Battleship game found for you.")
 
@@ -579,8 +592,8 @@ class Battleship(commands.Cog):
         Reset (remove) all your placed ships so you can reposition them.
         This command only works during the ship placement phase.
         """
-        for key, game in self.games.items():
-            if ctx.author.id in key and game.phase == "placement":
+        for game_key, game in self.games.items():
+            if ctx.author.id in game_key and game.phase == "placement":
                 removed = game.remove_all_ships(ctx.author)
                 if removed:
                     game.placement_ready[ctx.author] = False
@@ -609,12 +622,12 @@ class Battleship(commands.Cog):
                             return False
             return True
 
-        # If all ships on board1 are hit, player2 is the winner, and vice versa.
         if all_ships_sunk(game.ships1, game.board1):
             return game.player2
         if all_ships_sunk(game.ships2, game.board2):
             return game.player1
         return None
+
 
 async def setup(bot):
     await bot.add_cog(Battleship(bot))
