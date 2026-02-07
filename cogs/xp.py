@@ -12,7 +12,6 @@ from config import (
     CURRENCY_NAME,
     CURRENCY_SYMBOL,
 )
-from utils.economy import user_key
 from utils.xp import award_xp
 from utils.embed import create_embed
 
@@ -54,8 +53,8 @@ class XP(commands.Cog):
         if not ENABLE_XP_SYSTEM or message.author.bot:
             return
 
-        key = user_key(message.author)
-        leveled, level, _ = award_xp(key, XP_PER_MESSAGE)
+        # Pass the member/user object so economy can auto-refresh username/display_name
+        leveled, level, _ = award_xp(message.author, XP_PER_MESSAGE)
 
         if leveled:
             await self.send_level_up_message(message.author, level, message.channel)
@@ -65,8 +64,8 @@ class XP(commands.Cog):
         if not ENABLE_XP_SYSTEM or user.bot:
             return
 
-        key = user_key(user)
-        leveled, level, _ = award_xp(key, XP_PER_REACTION)
+        # Pass the member/user object so economy can auto-refresh username/display_name
+        leveled, level, _ = award_xp(user, XP_PER_REACTION)
 
         if leveled:
             await self.send_level_up_message(user, level, reaction.message.channel)
@@ -76,8 +75,8 @@ class XP(commands.Cog):
         if not ENABLE_XP_SYSTEM or ctx.author.bot:
             return
 
-        key = user_key(ctx.author)
-        leveled, level, _ = award_xp(key, XP_PER_COMMAND)
+        # Pass the member/user object so economy can auto-refresh username/display_name
+        leveled, level, _ = award_xp(ctx.author, XP_PER_COMMAND)
 
         if leveled:
             await self.send_level_up_message(ctx.author, level, ctx.channel)
