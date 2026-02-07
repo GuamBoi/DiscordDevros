@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
-from utils.economy import add_currency, get_balance, user_key
+from utils.economy import add_currency, user_key
 from utils.embed import create_embed
 from config import DEFAULT_CURRENCY_GIVE, BETTING_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
+
 
 class EconomyAward(commands.Cog):
     def __init__(self, bot):
@@ -28,8 +29,9 @@ class EconomyAward(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        # ✅ Centralized identity
-        new_balance = add_currency(user_key(member), amount)
+        # ✅ Centralized identity (ID-keyed)
+        key = user_key(member)
+        new_balance = add_currency(key, amount)
 
         title = "Currency Awarded!"
         description = (
@@ -41,7 +43,7 @@ class EconomyAward(commands.Cog):
             description += f"\n**Reason:** {reason}"
 
         embed_result = create_embed(title, description)
-        embed = await embed_result if hasattr(embed_result, '__await__') else embed_result
+        embed = await embed_result if hasattr(embed_result, "__await__") else embed_result
 
         channel = self.bot.get_channel(BETTING_CHANNEL)
         if channel:
@@ -59,6 +61,7 @@ class EconomyAward(commands.Cog):
             )
             await ctx.send(embed=embed)
             await ctx.message.delete()
+
 
 async def setup(bot):
     await bot.add_cog(EconomyAward(bot))
