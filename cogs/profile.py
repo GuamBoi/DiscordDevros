@@ -9,28 +9,29 @@ class Balance(commands.Cog):
         self.bot = bot
 
     @commands.command(
-        name='profile',
-        aliases=['balance', 'bal'],
-        help='Show your (or another user’s) profile: currency, level, XP, streaks.'
+        name="profile",
+        aliases=["balance", "bal"],
+        help="Show your (or another user’s) profile: currency, level, XP, streaks."
     )
     async def profile(self, ctx, member: discord.Member | None = None):
         member = member or ctx.author
 
-        data = load_economy(user_key(member))
+        key = user_key(member)  # ID-keyed
+        data = load_economy(key)
 
-        lvl    = data.get("level", 1)
-        xp     = data.get("xp", 0)
+        lvl = int(data.get("level", 1) or 1)
+        xp = int(data.get("xp", 0) or 0)
         needed = 100 * lvl
-        bal    = data.get("currency", 0)
+        bal = int(data.get("currency", 0) or 0)
 
         description = (
             f"{member.mention}\n\n"
             f"**{CURRENCY_NAME}:** {CURRENCY_SYMBOL}{bal}\n"
             f"**Level:** {lvl}\n"
             f"**XP:** {xp} / {needed}\n\n"
-            f"**Wordle Streak:** `{data.get('wordle_streak', 0)}`\n"
-            f"**Connect4 Streak:** `{data.get('connect4_streak', 0)}`\n"
-            f"**Battleship Win Streak:** `{data.get('battleship_streak', 0)}`\n"
+            f"**Wordle Streak:** `{int(data.get('wordle_streak', 0) or 0)}`\n"
+            f"**Connect4 Streak:** `{int(data.get('connect4_streak', 0) or 0)}`\n"
+            f"**Battleship Win Streak:** `{int(data.get('battleship_streak', 0) or 0)}`\n"
         )
 
         embed = await create_embed(
