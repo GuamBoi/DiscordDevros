@@ -1,3 +1,5 @@
 - Temp Place Holder for .png files later :)
-- Frame size= 512×512 card
+- Frame size = 512×512 card
+  - Hole = 360×360
+  - Hole top-left at (76, 96)
 - square avatar
