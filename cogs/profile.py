@@ -1,8 +1,15 @@
+import discord
+from discord.ext import commands
 from config import CURRENCY_NAME, CURRENCY_SYMBOL
 from utils.economy import load_economy, user_key
 from utils.embed import create_embed
-from utils.shop import ensure_shop_schema, get_equipped_frame, get_equipped_accent_color
 from utils.profile_card import render_profile_card
+from utils.shop import (
+    ensure_shop_schema,
+    get_equipped,
+    get_owned_frames,
+    get_owned_colors,
+)
 
 def _discord_color_from_hex(value: str | None) -> discord.Color:
     if not value:
@@ -16,51 +23,65 @@ def _discord_color_from_hex(value: str | None) -> discord.Color:
         return discord.Color.blue()
 
 class Balance(commands.Cog):
-def __init__(self, bot):
-@@ -16,9 +29,16 @@ def __init__(self, bot):
-async def profile(self, ctx, member: discord.Member | None = None):
-member = member or ctx.author
+    def __init__(self, bot):
+        self.bot = bot
 
-        key = user_key(member)  # ID-keyed
-        # Economy (ID-keyed)
+    @commands.command(
+        name="profile",
+        aliases=["balance", "bal"],
+        help="Show your (or another user’s) profile: currency, level, XP, streaks."
+    )
+    async def profile(self, ctx, member: discord.Member | None = None):
+        member = member or ctx.author
+
         key = user_key(member)
-data = load_economy(key)
+        data = load_economy(key)
 
-        # Ensure shop schema exists (adds inventory if missing)
-        ensure_shop_schema(key)
+        # Ensure inventory exists for everyone (public display)
+        ensure_shop_schema(member)
 
-        frame_id = get_equipped_frame(key)
-        accent_hex = get_equipped_accent_color(key)
+        frame_id, accent_hex = get_equipped(member)
+        owned_frames = get_owned_frames(member)
+        owned_colors = get_owned_colors(member)
 
-lvl = int(data.get("level", 1) or 1)
-xp = int(data.get("xp", 0) or 0)
-needed = 100 * lvl
-@@ -31,19 +51,23 @@ async def profile(self, ctx, member: discord.Member | None = None):
-f"**XP:** {xp} / {needed}\n\n"
-f"**Wordle Streak:** `{int(data.get('wordle_streak', 0) or 0)}`\n"
-f"**Connect4 Streak:** `{int(data.get('connect4_streak', 0) or 0)}`\n"
-            f"**Battleship Win Streak:** `{int(data.get('battleship_streak', 0) or 0)}`\n"
+        lvl = int(data.get("level", 1) or 1)
+        xp = int(data.get("xp", 0) or 0)
+        needed = 100 * lvl
+        bal = int(data.get("currency", 0) or 0)
+
+        frames_text = ", ".join(f"`{f}`" for f in owned_frames) if owned_frames else "_none_"
+        colors_text = ", ".join(f"`{c}`" for c in owned_colors) if owned_colors else "_none_"
+
+        description = (
+            f"{member.mention}\n\n"
+            f"**{CURRENCY_NAME}:** {CURRENCY_SYMBOL}{bal}\n"
+            f"**Level:** {lvl}\n"
+            f"**XP:** {xp} / {needed}\n\n"
+            f"**Wordle Streak:** `{int(data.get('wordle_streak', 0) or 0)}`\n"
+            f"**Connect4 Streak:** `{int(data.get('connect4_streak', 0) or 0)}`\n"
             f"**Battleship Win Streak:** `{int(data.get('battleship_streak', 0) or 0)}`\n\n"
             f"**Equipped Frame:** `{frame_id or 'none'}`\n"
-            f"**Accent Color:** `{accent_hex or 'default'}`\n"
-)
+            f"**Equipped Color:** `{accent_hex or 'default'}`\n"
+            f"**Owned Frames:** {frames_text}\n"
+            f"**Owned Colors:** {colors_text}\n"
+        )
 
-embed = await create_embed(
-title=f"{member.display_name}'s Profile",
-description=description,
-            color=discord.Color.blue()
+        embed = await create_embed(
+            title=f"{member.display_name}'s Profile",
+            description=description,
             color=_discord_color_from_hex(accent_hex),
-)
+        )
 
-        if member.display_avatar:
-            embed.set_thumbnail(url=member.display_avatar.url)
-        # Generate card image and attach it
         png_bytes = await render_profile_card(member, frame_id=frame_id, accent_hex=accent_hex)
         file = discord.File(fp=png_bytes, filename="profile.png")
         embed.set_image(url="attachment://profile.png")
 
-        await ctx.send(embed=embed)
         await ctx.send(embed=embed, file=file)
 
-try:
-await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except (discord.NotFound, discord.Forbidden):
+            pass
+
+async def setup(bot):
+    await bot.add_cog(Balance(bot))
