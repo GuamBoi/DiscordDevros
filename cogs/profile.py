@@ -1,15 +1,16 @@
+# cogs/profile.py
 import discord
 from discord.ext import commands
 from config import CURRENCY_NAME, CURRENCY_SYMBOL
 from utils.economy import load_economy, user_key
 from utils.embed import create_embed
-from utils.profile_card import render_profile_card
 from utils.shop import (
     ensure_shop_schema,
     get_equipped,
     get_owned_frames,
     get_owned_colors,
 )
+from utils.profile_card import render_profile_thumbnail
 
 def _discord_color_from_hex(value: str | None) -> discord.Color:
     if not value:
@@ -37,7 +38,7 @@ class Balance(commands.Cog):
         key = user_key(member)
         data = load_economy(key)
 
-        # Ensure inventory exists for everyone (public display)
+        # Ensure inventory exists + is backfilled (public display)
         ensure_shop_schema(member)
 
         frame_id, accent_hex = get_equipped(member)
@@ -49,8 +50,8 @@ class Balance(commands.Cog):
         needed = 100 * lvl
         bal = int(data.get("currency", 0) or 0)
 
-        frames_text = ", ".join(f"`{f}`" for f in owned_frames) if owned_frames else "_none_"
-        colors_text = ", ".join(f"`{c}`" for c in owned_colors) if owned_colors else "_none_"
+        frames_text = ", ".join(f"`{f}`" for f in owned_frames) if owned_frames else "`none`"
+        colors_text = ", ".join(f"`{c}`" for c in owned_colors) if owned_colors else "`none`"
 
         description = (
             f"{member.mention}\n\n"
@@ -72,11 +73,17 @@ class Balance(commands.Cog):
             color=_discord_color_from_hex(accent_hex),
         )
 
-        png_bytes = await render_profile_card(member, frame_id=frame_id, accent_hex=accent_hex)
-        file = discord.File(fp=png_bytes, filename="profile.png")
-        embed.set_image(url="attachment://profile.png")
+        # Use generated framed thumbnail in the top-left
+        thumb_bytes = await render_profile_thumbnail(
+            member,
+            frame_id=frame_id,
+            accent_hex=accent_hex,
+            size=256,
+        )
+        thumb_file = discord.File(fp=thumb_bytes, filename="thumb.png")
+        embed.set_thumbnail(url="attachment://thumb.png")
 
-        await ctx.send(embed=embed, file=file)
+        await ctx.send(embed=embed, file=thumb_file)
 
         try:
             await ctx.message.delete()
