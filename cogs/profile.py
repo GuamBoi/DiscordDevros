@@ -1,4 +1,3 @@
-# cogs/profile.py
 import discord
 from discord.ext import commands
 from config import CURRENCY_NAME, CURRENCY_SYMBOL
@@ -9,8 +8,10 @@ from utils.shop import (
     get_equipped,
     get_owned_frames,
     get_owned_colors,
+    color_hex_to_name,   # ✅ added
 )
 from utils.profile_card import render_profile_thumbnail
+
 
 def _discord_color_from_hex(value: str | None) -> discord.Color:
     if not value:
@@ -22,6 +23,7 @@ def _discord_color_from_hex(value: str | None) -> discord.Color:
         return discord.Color(int(s, 16))
     except Exception:
         return discord.Color.blue()
+
 
 class Balance(commands.Cog):
     def __init__(self, bot):
@@ -45,7 +47,7 @@ class Balance(commands.Cog):
         frame_id, accent_hex = get_equipped(member)
 
         owned_frames = get_owned_frames(member)
-        owned_colors = get_owned_colors(member)
+        owned_colors = get_owned_colors(member)  # stored as hex internally
 
         lvl = int(data.get("level", 1) or 1)
         xp = int(data.get("xp", 0) or 0)
@@ -53,7 +55,10 @@ class Balance(commands.Cog):
         bal = int(data.get("currency", 0) or 0)
 
         frames_text = ", ".join(f"`{f}`" for f in owned_frames) if owned_frames else "`none`"
-        colors_text = ", ".join(f"`{c}`" for c in owned_colors) if owned_colors else "`none`"
+
+        # ✅ Display color NAMES (fallback to hex if unknown)
+        colors_display = [(color_hex_to_name(c) or c) for c in owned_colors]
+        colors_text = ", ".join(f"`{c}`" for c in colors_display) if colors_display else "`none`"
 
         description = (
             f"{member.mention}\n\n"
@@ -92,6 +97,7 @@ class Balance(commands.Cog):
             await ctx.message.delete()
         except (discord.NotFound, discord.Forbidden):
             pass
+
 
 async def setup(bot):
     await bot.add_cog(Balance(bot))
