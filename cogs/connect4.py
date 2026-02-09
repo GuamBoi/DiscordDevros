@@ -1,4 +1,3 @@
-# cogs/connect4.py
 import discord
 import asyncio
 import os
