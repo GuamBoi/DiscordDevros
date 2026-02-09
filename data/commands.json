@@ -156,6 +156,13 @@
     "LLM_Context": "Fires on the given coordinate in an ongoing Battleship game."
   },
   {
+    "Command_Name": "battleship_leaderboard",
+    "Category": ["member", "leaderboards"],
+    "Description": "Shows the top 10 members with the highest Battleship streak.",
+    "Example": "{COMMAND_PREFIX}wordle_leaderboard",
+    "LLM_Context": "Displays the top 10 members based on current Battleship streaks."
+  },
+  {
     "Command_Name": "d4",
     "Category": ["member", "dice"],
     "Description": "Rolls a 4-sided die.",
