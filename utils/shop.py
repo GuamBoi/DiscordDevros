@@ -1,10 +1,43 @@
 from __future__ import annotations
+
 import os
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 from utils.economy import load_economy, save_economy, EconomyIdentity
 
 # Default folder that holds frame PNG files
 DEFAULT_PROFILE_FRAMES_DIR = os.path.join("data", "profile_frames")
+
+# ============================================================
+# Color name <-> hex mapping (single source of truth)
+# ============================================================
+
+# Store canonical hex values lowercase.
+COLOR_NAME_TO_HEX: Dict[str, str] = {
+    "red": "#832e2c",
+    "orange": "#a95e3f",
+    "yellow": "#bfa066",
+    "green": "#5b6d61",
+    "blue": "#3d5361",
+    "purple": "#6b5b7b",
+}
+
+HEX_TO_COLOR_NAME: Dict[str, str] = {v: k for k, v in COLOR_NAME_TO_HEX.items()}
+
+
+def color_name_to_hex(name: str) -> Optional[str]:
+    """Convert a user-facing color name to a normalized hex, or None if unknown."""
+    if not name:
+        return None
+    return COLOR_NAME_TO_HEX.get(name.strip().lower())
+
+
+def color_hex_to_name(color_hex: str) -> Optional[str]:
+    """Convert a hex to a user-facing name, or None if unknown."""
+    hx = normalize_hex_color(color_hex)
+    if not hx:
+        return None
+    return HEX_TO_COLOR_NAME.get(hx)
+
 
 # ============================================================
 # Schema / inventory
@@ -29,6 +62,11 @@ def ensure_shop_schema(identity: EconomyIdentity) -> dict:
     owned.setdefault("frames", [])            # list[str]
     owned.setdefault("colors", [])            # list[str] (hex "#RRGGBB")
 
+    # Normalize any stored color hex values (in case older data used uppercase)
+    owned["colors"] = [c for c in (normalize_hex_color(x) for x in owned["colors"]) if c]
+    if profile.get("accent_color"):
+        profile["accent_color"] = normalize_hex_color(profile["accent_color"])
+
     # NOTE: This assumes your economy schema stores a stable user_id in the JSON.
     # If your economy layer uses member.id everywhere, make sure data["user_id"] is that id (string).
     save_economy(data["user_id"], data)
@@ -46,6 +84,10 @@ def get_owned_frames(identity: EconomyIdentity) -> List[str]:
     return list(data["inventory"]["owned"]["frames"])
 
 def get_owned_colors(identity: EconomyIdentity) -> List[str]:
+    """
+    Returns owned colors as hex strings (normalized '#rrggbb').
+    Storage remains hex; use color_hex_to_name() for display.
+    """
     data = ensure_shop_schema(identity)
     return list(data["inventory"]["owned"]["colors"])
 
@@ -53,7 +95,10 @@ def owns_frame(identity: EconomyIdentity, frame_id: str) -> bool:
     return frame_id in get_owned_frames(identity)
 
 def owns_color(identity: EconomyIdentity, color_hex: str) -> bool:
-    return color_hex in get_owned_colors(identity)
+    hx = normalize_hex_color(color_hex)
+    if not hx:
+        return False
+    return hx in get_owned_colors(identity)
 
 # ---------- Write helpers ----------
 
@@ -72,12 +117,17 @@ def grant_frame(identity: EconomyIdentity, frame_id: str) -> bool:
 def grant_color(identity: EconomyIdentity, color_hex: str) -> bool:
     """
     Adds a color to owned colors. Returns True if newly added, False if already owned.
+    Accepts any case; stores normalized '#rrggbb'.
     """
+    hx = normalize_hex_color(color_hex)
+    if not hx:
+        return False
+
     data = ensure_shop_schema(identity)
     colors = data["inventory"]["owned"]["colors"]
-    if color_hex in colors:
+    if hx in colors:
         return False
-    colors.append(color_hex)
+    colors.append(hx)
     save_economy(data["user_id"], data)
     return True
 
@@ -88,7 +138,7 @@ def equip_frame(identity: EconomyIdentity, frame_id: Optional[str]) -> None:
 
 def equip_color(identity: EconomyIdentity, color_hex: Optional[str]) -> None:
     data = ensure_shop_schema(identity)
-    data["inventory"]["profile"]["accent_color"] = color_hex
+    data["inventory"]["profile"]["accent_color"] = normalize_hex_color(color_hex) if color_hex else None
     save_economy(data["user_id"], data)
 
 # ---------- Validation helpers ----------
@@ -129,6 +179,14 @@ def format_frame_line(frame_id: str, price: int, missing: bool = False) -> str:
     warn = " ⚠️ *(file missing)*" if missing else ""
     return f"• **{frame_id}** {format_price(price)}{warn}"
 
-def format_color_line(color_hex: str, price: int) -> str:
-    # Bold hex, no name, italic price
-    return f"• **{color_hex}** {format_price(price)}"
+def format_color_line(color_name_or_hex: str, price: int, prefer_name: bool = True) -> str:
+    """
+    If prefer_name=True and a hex is provided that maps to a name, show the name.
+    Otherwise show what was passed in.
+    """
+    label = color_name_or_hex
+    if prefer_name and color_name_or_hex.startswith("#"):
+        name = color_hex_to_name(color_name_or_hex)
+        if name:
+            label = name
+    return f"• **{label}** {format_price(price)}"
