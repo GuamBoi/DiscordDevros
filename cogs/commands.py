@@ -3,8 +3,28 @@ from discord.ext import commands
 from utils.dictionary import get_member_commands, get_moderator_commands
 from config import COMMAND_PREFIX, MODERATOR_ROLE_ID
 
-def format_command(cmd):
-    return f"**{COMMAND_PREFIX}{cmd['Command_Name']}**: {cmd['Description']}"
+# Discord embed field/value limits (practical guardrails)
+_EMBED_DESC_LIMIT = 4096
+_FIELD_VALUE_LIMIT = 1024
+
+def format_command(cmd, include_examples: bool = True) -> str:
+    """
+    Format a command entry as:
+      **!command**: description
+      _Example_: ...
+    """
+    name = cmd.get("Command_Name", "unknown")
+    desc = cmd.get("Description", "").strip()
+
+    lines = [f"**{COMMAND_PREFIX}{name}**: {desc}" if desc else f"**{COMMAND_PREFIX}{name}**"]
+
+    if include_examples:
+        ex = (cmd.get("Example") or "").strip()
+        if ex:
+            # keep it readable; Example strings already contain pipes/backticks
+            lines.append(f"_Example_: {ex}")
+
+    return "\n".join(lines)
 
 def categorize(cmds, categories):
     groups = {cat: [] for cat in categories}
@@ -26,6 +46,30 @@ def _dedupe_by_name(cmds):
         out.append(c)
     return out
 
+def _chunk_lines_to_field_values(lines, limit=_FIELD_VALUE_LIMIT):
+    """
+    Takes a list of pre-formatted command blocks (each block may be multi-line),
+    and splits into multiple field values if needed to avoid the 1024 char limit.
+    """
+    chunks = []
+    current = ""
+    for block in lines:
+        candidate = (current + "\n\n" + block) if current else block
+        if len(candidate) <= limit:
+            current = candidate
+        else:
+            if current:
+                chunks.append(current)
+            # If a single block is too large, hard-split it (rare)
+            if len(block) > limit:
+                chunks.append(block[:limit - 1] + "…")
+                current = ""
+            else:
+                current = block
+    if current:
+        chunks.append(current)
+    return chunks
+
 class CommandHelp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -45,16 +89,37 @@ class CommandHelp(commands.Cog):
             c for c in cmds
             if "general" in c.get("Category", []) and "moderator" not in c.get("Category", [])
         ]
-        desc = [format_command(c) for c in general_cmds]
 
-        if any(r.id == MODERATOR_ROLE_ID for r in ctx.author.roles):
-            desc.append(f"\n_Mod commands available via `{COMMAND_PREFIX}modcommands`_")
+        blocks = [format_command(c, include_examples=True) for c in general_cmds]
 
-        embed = discord.Embed(
-            title="📋 General Commands",
-            description="\n".join(desc) if desc else "_No commands found._",
-            color=discord.Color.blue()
-        )
+        # Description embeds get cramped quickly; keep in description but guard size.
+        description = "\n\n".join(blocks) if blocks else "_No commands found._"
+        if len(description) > _EMBED_DESC_LIMIT:
+            # If it exceeds, fall back to fields for safety
+            embed = discord.Embed(
+                title="📋 General Commands",
+                description="General member commands.",
+                color=discord.Color.blue()
+            )
+            for i, chunk in enumerate(_chunk_lines_to_field_values(blocks)):
+                embed.add_field(
+                    name="Commands" if i == 0 else "Commands (cont.)",
+                    value=chunk,
+                    inline=False
+                )
+        else:
+            if any(r.id == MODERATOR_ROLE_ID for r in ctx.author.roles):
+                # keep this as a small note, not mixed into the command list
+                note = f"\n\n_Mod commands available via `{COMMAND_PREFIX}modcommands`_"
+                if len(description) + len(note) <= _EMBED_DESC_LIMIT:
+                    description += note
+
+            embed = discord.Embed(
+                title="📋 General Commands",
+                description=description,
+                color=discord.Color.blue()
+            )
+
         await ctx.send(embed=embed)
         await self._delete_invocation(ctx)
 
@@ -66,13 +131,29 @@ class CommandHelp(commands.Cog):
             c for c in cmds
             if "economy" in c.get("Category", []) and "moderator" not in c.get("Category", [])
         ]
-        desc = [format_command(c) for c in econ_cmds]
 
-        embed = discord.Embed(
-            title="💰 Economy Commands",
-            description="\n".join(desc) if desc else "_No commands found._",
-            color=discord.Color.green()  # ✅ green
-        )
+        blocks = [format_command(c, include_examples=True) for c in econ_cmds]
+        desc = "\n\n".join(blocks) if blocks else "_No commands found._"
+
+        if len(desc) <= _EMBED_DESC_LIMIT:
+            embed = discord.Embed(
+                title="💰 Economy Commands",
+                description=desc,
+                color=discord.Color.green()
+            )
+        else:
+            embed = discord.Embed(
+                title="💰 Economy Commands",
+                description="Member economy commands.",
+                color=discord.Color.green()
+            )
+            for i, chunk in enumerate(_chunk_lines_to_field_values(blocks)):
+                embed.add_field(
+                    name="Commands" if i == 0 else "Commands (cont.)",
+                    value=chunk,
+                    inline=False
+                )
+
         await ctx.send(embed=embed)
         await self._delete_invocation(ctx)
 
@@ -88,7 +169,7 @@ class CommandHelp(commands.Cog):
         embed = discord.Embed(
             title="🎮 Game Commands",
             description="All commands related to games and leaderboards.",
-            color=discord.Color.red()  # ✅ red
+            color=discord.Color.red()
         )
 
         subtitles = {
@@ -103,8 +184,13 @@ class CommandHelp(commands.Cog):
         for key in categories:
             if grouped[key]:
                 any_fields = True
-                value = "\n".join(format_command(cmd) for cmd in grouped[key])
-                embed.add_field(name=subtitles.get(key, key.title()), value=value, inline=False)
+                blocks = [format_command(cmd, include_examples=True) for cmd in grouped[key]]
+                for i, chunk in enumerate(_chunk_lines_to_field_values(blocks)):
+                    embed.add_field(
+                        name=subtitles.get(key, key.title()) if i == 0 else f"{subtitles.get(key, key.title())} (cont.)",
+                        value=chunk,
+                        inline=False
+                    )
 
         if not any_fields:
             embed.description = "_No commands found._"
@@ -124,7 +210,7 @@ class CommandHelp(commands.Cog):
         embed = discord.Embed(
             title="🛠️ Moderator Commands",
             description="Moderator-only tools and utilities.",
-            color=discord.Color.gold()  # ✅ yellow
+            color=discord.Color.gold()
         )
 
         subtitles = {
@@ -137,8 +223,13 @@ class CommandHelp(commands.Cog):
         for key in categories:
             if grouped[key]:
                 any_fields = True
-                value = "\n".join(format_command(cmd) for cmd in grouped[key])
-                embed.add_field(name=subtitles.get(key, key.title()), value=value, inline=False)
+                blocks = [format_command(cmd, include_examples=True) for cmd in grouped[key]]
+                for i, chunk in enumerate(_chunk_lines_to_field_values(blocks)):
+                    embed.add_field(
+                        name=subtitles.get(key, key.title()) if i == 0 else f"{subtitles.get(key, key.title())} (cont.)",
+                        value=chunk,
+                        inline=False
+                    )
 
         if not any_fields:
             embed.description = "_No commands found._"
