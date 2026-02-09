@@ -32,9 +32,11 @@ PROFILE_FRAMES_DIR = DEFAULT_PROFILE_FRAMES_DIR
 # ============================================================
 
 SHOP_FRAMES = {
-    "purple": {"price": 100},
     "red": {"price": 100},
     "yellow": {"price": 100},
+    "green": {"price": 100},
+    "blue": {"price": 100},
+    "purple": {"price": 100},
 }
 
 # User-facing name -> internal hex
