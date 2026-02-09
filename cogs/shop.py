@@ -32,8 +32,16 @@ PROFILE_FRAMES_DIR = os.path.join("data", "profile_frames")
 # "gold": {"name": "Gold Frame", "price": 750},
 #
 SHOP_FRAMES = {
+    "purple": {
+        "name": "Purple Frame",
+        "price": 100,
+    },
     "red": {
         "name": "Red Frame",
+        "price": 100,
+    },
+    "yellow": {
+        "name": "Yellow Frame",
         "price": 100,
     },
 }
@@ -46,8 +54,28 @@ SHOP_FRAMES = {
 # "#ff9900": {"name": "Orange", "price": 300},
 #
 SHOP_COLORS = {
+    "#832E2C": {
+        "name": "Red",
+        "price": 100,
+    },
+    "#A95E3F": {
+        "name": "Orange",
+        "price": 100,
+    },
+    "#BFA066": {
+        "name": "Yellow",
+        "price": 100,
+    },
+    "#5B6D61": {
+        "name": "Green",
+        "price": 100,
+    },
     "#3D5361": {
         "name": "Blue",
+        "price": 100,
+    },
+    "#6B5B7B": {
+        "name": "Purple",
         "price": 100,
     },
 }
