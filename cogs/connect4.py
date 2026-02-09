@@ -1,12 +1,12 @@
+# cogs/connect4.py
 import discord
 import asyncio
 import os
 import json
 from discord.ext import commands
-
 from utils.economy import add_currency, remove_currency, load_economy, save_economy, user_key
 from utils.embed import create_embed
-from config import GAME_WIN, GAME_LOSE, CURRENCY_NAME, CONNECT4_CHANNEL, ECONOMY_FOLDER
+from config import GAME_WIN, GAME_LOSE, CURRENCY_NAME, CONNECT4_CHANNEL
 
 # Emoji definitions (using Unicode number emojis for columns 1-7)
 number_emojis = ["\u0031\u20E3", "\u0032\u20E3", "\u0033\u20E3", "\u0034\u20E3", "\u0035\u20E3", "\u0036\u20E3", "\u0037\u20E3"]
@@ -16,13 +16,11 @@ ConnectBoard = "<:ConnectBoard:1213906784821977118>"
 ConnectRed = "<:ConnectRed:1213906783437848616>"
 ConnectYellow = "<:ConnectYellow:1213906785941987399>"
 
-
 # Player class to track players
 class Connect4Player:
     def __init__(self, member, token_emoji):
         self.member = member
         self.token_emoji = token_emoji
-
 
 # The game logic encapsulated in a class
 class Connect4Game:
@@ -77,7 +75,6 @@ class Connect4Game:
                 return True
         return False
 
-
 # Cog to hold the Connect4 commands
 class Connect4(commands.Cog):
     def __init__(self, bot):
@@ -98,7 +95,10 @@ class Connect4(commands.Cog):
     async def connect4(self, ctx, opponent: discord.Member):
         """Starts a game of Connect4 with the mentioned opponent."""
         # Delete the command message to keep channels clean
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except (discord.NotFound, discord.Forbidden):
+            pass
 
         if opponent == ctx.author:
             await ctx.send("You cannot play against yourself!")
@@ -185,47 +185,6 @@ class Connect4(commands.Cog):
             await channel.send(embed=result_embed)
         else:
             await channel.send("It's a draw!")
-
-    @commands.command()
-    async def connect4_leaderboard(self, ctx):
-        """Displays the top 10 members with the highest Connect4 win streaks."""
-        # Delete the command message to keep channels clean
-        await ctx.message.delete()
-
-        leaderboard = []
-
-        # Iterate over all economy files (now ID-keyed)
-        for filename in os.listdir(ECONOMY_FOLDER):
-            if not filename.endswith(".json"):
-                continue
-
-            user_id_str = filename[:-5]  # strip .json
-            if not user_id_str.isdigit():
-                continue
-
-            filepath = os.path.join(ECONOMY_FOLDER, filename)
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception:
-                continue
-
-            streak = int(data.get("connect4_streak", 0) or 0)
-            leaderboard.append((int(user_id_str), streak))
-
-        leaderboard.sort(key=lambda x: x[1], reverse=True)
-        top10 = leaderboard[:10]
-
-        description = ""
-        for idx, (user_id, streak) in enumerate(top10, start=1):
-            member = ctx.guild.get_member(user_id)
-            mention = member.mention if member else f"`{user_id}`"
-            display = member.display_name if member else "Unknown Member"
-            description += f"**{idx}.** {mention} ({display}) - `{streak}`\n"
-
-        embed = await create_embed("Connect4 Leaderboard", description, color=discord.Color.gold())
-        await ctx.send(embed=embed)
-
 
 async def setup(bot):
     await bot.add_cog(Connect4(bot))
