@@ -12,7 +12,6 @@ from utils.shop import (
 )
 from utils.profile_card import render_profile_thumbnail
 
-
 def _discord_color_from_hex(value: str | None) -> discord.Color:
     if not value:
         return discord.Color.blue()
@@ -23,7 +22,6 @@ def _discord_color_from_hex(value: str | None) -> discord.Color:
         return discord.Color(int(s, 16))
     except Exception:
         return discord.Color.blue()
-
 
 class Balance(commands.Cog):
     def __init__(self, bot):
@@ -97,7 +95,6 @@ class Balance(commands.Cog):
             await ctx.message.delete()
         except (discord.NotFound, discord.Forbidden):
             pass
-
 
 async def setup(bot):
     await bot.add_cog(Balance(bot))
