@@ -1,9 +1,8 @@
 import discord
 from discord.ext import commands
 import os
-import json
 import random
-from config import GAME_WIN, GAME_LOSE, ECONOMY_FOLDER, WORDLE_CHANNEL, CURRENCY_NAME
+from config import GAME_WIN, GAME_LOSE, WORDLE_CHANNEL, CURRENCY_NAME
 from utils import economy
 from utils.embed import create_embed
 from utils.economy import user_key
@@ -51,18 +50,26 @@ class Wordle(commands.Cog):
 
     @commands.command(name="wordle")
     async def wordle(self, ctx):
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except (discord.NotFound, discord.Forbidden):
+            pass
+
         key = user_key(ctx.author)  # ID-keyed economy identity
 
-        # Get a random word from the file
         word = get_random_word_from_file()
         if not word:
             await ctx.send(
-                f"{ctx.author.mention} No valid word available. Please add some 5-letter words to the file."
+                f"{ctx.author.mention} No valid word available. Please add some 5-letter words to the file.",
+                delete_after=30
             )
             return
 
         channel = self.bot.get_channel(WORDLE_CHANNEL)
+        if channel is None:
+            await ctx.send("Wordle channel not found.", delete_after=30)
+            return
+
         embed = await create_embed(
             "Wordle Game",
             f"A new Wordle game has started! You have {MAX_ATTEMPTS} attempts to guess the word."
@@ -73,19 +80,26 @@ class Wordle(commands.Cog):
 
     @commands.command(name="guess")
     async def guess(self, ctx, guess_word: str):
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except (discord.NotFound, discord.Forbidden):
+            pass
+
         key = user_key(ctx.author)  # ID-keyed
         guess_word = guess_word.lower().strip()
 
         if key not in active_games:
-            await ctx.send(f"{ctx.author.mention}, you need to start a Wordle game first using !wordle.")
+            await ctx.send(
+                f"{ctx.author.mention}, you need to start a Wordle game first using !wordle.",
+                delete_after=30
+            )
             return
 
         game = active_games[key]
         answer = game["answer"]
 
         if len(guess_word) != len(answer):
-            await ctx.send(f"Your guess must be {len(answer)} letters long.")
+            await ctx.send(f"Your guess must be {len(answer)} letters long.", delete_after=30)
             return
 
         game["attempts"] += 1
@@ -120,47 +134,5 @@ class Wordle(commands.Cog):
         embed = await create_embed("Wordle Game", description)
         await game["message"].edit(embed=embed)
 
-    @commands.command(name="wordle_leaderboard")
-    async def wordle_leaderboard(self, ctx):
-        # Delete the command message to keep the channel clean
-        await ctx.message.delete()
-
-        streaks = []
-        for filename in os.listdir(ECONOMY_FOLDER):
-            if not filename.endswith(".json"):
-                continue
-
-            user_id_str = filename[:-5]  # strip ".json"
-            if not user_id_str.isdigit():
-                continue
-
-            filepath = os.path.join(ECONOMY_FOLDER, filename)
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception as e:
-                print(f"Error reading {filename}: {e}")
-                continue
-
-            streak = int(data.get("wordle_streak", 0) or 0)
-            streaks.append((int(user_id_str), streak))
-
-        streaks.sort(key=lambda x: x[1], reverse=True)
-        top10 = streaks[:10]
-
-        if not top10:
-            description = "No streak data available."
-        else:
-            lines = []
-            for user_id, streak in top10:
-                member = ctx.guild.get_member(user_id)
-                if member:
-                    lines.append(f"{member.mention} ({member.display_name}) - `{streak}`")
-                else:
-                    lines.append(f"`{user_id}` (Unknown Member) - `{streak}`")
-            description = "\n".join(lines)
-
-        embed = await create_embed("Wordle Leaderboard", description, color=discord.Color.gold())
-        await ctx.send(embed=embed)
 async def setup(bot):
     await bot.add_cog(Wordle(bot))
