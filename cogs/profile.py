@@ -57,15 +57,15 @@ class Balance(commands.Cog):
 
         description = (
             f"{member.mention}\n\n"
-            f"**🪙 Wallet\n"
+            f"**🪙 Wallet**\n"
             f"**{CURRENCY_NAME}:** {CURRENCY_SYMBOL}{bal}\n"
             f"**Level:** {lvl}\n"
             f"**XP:** {xp} / {needed}\n\n"
-            f"**🔥 Streaks\n"
+            f"**🔥 Streaks**\n"
             f"**Wordle Streak:** `{int(data.get('wordle_streak', 0) or 0)}`\n"
             f"**Connect4 Streak:** `{int(data.get('connect4_streak', 0) or 0)}`\n"
             f"**Battleship Win Streak:** `{int(data.get('battleship_streak', 0) or 0)}`\n\n"
-            f"**🛍️ Owned Items\n"
+            f"**🛍️ Owned Items**\n"
             f"**Frames:** {frames_text}\n"
             f"**Colors:** {colors_text}\n"
         )
