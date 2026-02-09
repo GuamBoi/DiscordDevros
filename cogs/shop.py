@@ -33,6 +33,7 @@ PROFILE_FRAMES_DIR = DEFAULT_PROFILE_FRAMES_DIR
 
 SHOP_FRAMES = {
     "red": {"price": 100},
+    "orange": {"price": 100},
     "yellow": {"price": 100},
     "green": {"price": 100},
     "blue": {"price": 100},
