@@ -19,7 +19,7 @@ ECONOMY_FOLDER = "data/economy"       # Folder where server members economy file
 
 # Bot Info
 BOT_NAME = "Devros"                           # The name of your bot
-BOT_VERSION = "2.1 (Economy Update)"          # The version of your bot
+BOT_VERSION = "2.2 (Shop Update)"             # The version of your bot
 
 # Role Info
 MODERATOR_ROLE_ID = 1035393475631394896      # Role ID for server mods
