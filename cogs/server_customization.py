@@ -4,7 +4,7 @@ import json
 import os
 from utils.embed import create_embed
 import config
-from utils.economy import load_economy
+from utils.economy import load_economy  # removed dead imports
 
 class ServerCustomization(commands.Cog):
     def __init__(self, bot):
