@@ -13,8 +13,8 @@ OPENWEBUI_API_KEY = os.getenv("OPENWEBUI_API_KEY")     # Pulled from .env file
 OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")     # Pulled from .env file
 
 # Non-sensitive settings (Additional bot settings that are okay to share)
-COMMAND_PREFIX = "!"              # Change value if you want different prefix.
-MODEL_NAME = "devros-mini"        # Set your model name here.
+COMMAND_PREFIX = "!"                  # Change value if you want different prefix.
+MODEL_NAME = "DiscordDevros"          # Set your model name here.
 ECONOMY_FOLDER = "data/economy"       # Folder where server members economy files are saved
 
 # Bot Info
