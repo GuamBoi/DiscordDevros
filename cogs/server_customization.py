@@ -4,7 +4,7 @@ import json
 import os
 from utils.embed import create_embed
 import config
-from utils.economy import load_economy  # removed dead imports
+from utils.economy import load_economy  # keep if you plan to use it later; otherwise safe to remove
 
 class ServerCustomization(commands.Cog):
     def __init__(self, bot):
@@ -19,46 +19,82 @@ class ServerCustomization(commands.Cog):
     def load_rolls(self):
         self.ensure_data_folder()
         if os.path.exists(self.rolls_file):
-            with open(self.rolls_file, 'r') as f:
+            with open(self.rolls_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         else:
             return {"color": {}, "channels": {}, "notifications": {}}
 
     def save_rolls(self):
         self.ensure_data_folder()
-        with open(self.rolls_file, 'w') as f:
-            json.dump(self.rolls_data, f, indent=4)
+        with open(self.rolls_file, "w", encoding="utf-8") as f:
+            json.dump(self.rolls_data, f, indent=4, ensure_ascii=False)
 
-    @commands.command(name='server_customization')
-    async def server_customization(self, ctx):
-        rolls_channel = self.bot.get_channel(config.ROLLS_CHANNEL)
-        if rolls_channel is None:
-            await ctx.send("Invalid channel ID in the config file.")
-            return
+    async def _fetch_existing_message(self, channel: discord.TextChannel, id_key: str):
+        """Fetch an existing panel message by stored ID. Returns None if missing/deleted."""
+        msg_id = self.rolls_data.get(id_key)
+        if not msg_id:
+            return None
+        try:
+            return await channel.fetch_message(int(msg_id))
+        except Exception:
+            return None
 
-        color_embed = await self.create_role_embed("color")
-        channels_embed = await self.create_role_embed("channels")
-        notifications_embed = await self.create_role_embed("notifications")
+    async def _ensure_panel(self, channel: discord.TextChannel, role_type: str, id_key: str):
+        """
+        Ensure a single reaction-role panel exists.
+        - If the stored message exists: edit its embed (no duplicates)
+        - If missing/deleted: create a new message, save its ID, add reactions
+        """
+        existing = await self._fetch_existing_message(channel, id_key)
+        embed = await self.create_role_embed(role_type)
 
-        color_message = await rolls_channel.send(embed=color_embed)
-        channels_message = await rolls_channel.send(embed=channels_embed)
-        notifications_message = await rolls_channel.send(embed=notifications_embed)
+        if existing:
+            try:
+                await existing.edit(embed=embed)
+            except Exception:
+                pass
+            return existing
 
-        self.rolls_data["color_roles_message_id"] = color_message.id
-        self.rolls_data["channels_roles_message_id"] = channels_message.id
-        self.rolls_data["notifications_roles_message_id"] = notifications_message.id
+        msg = await channel.send(embed=embed)
+        self.rolls_data[id_key] = msg.id
         self.save_rolls()
 
-        await self.add_reactions(color_message, "color")
-        await self.add_reactions(channels_message, "channels")
-        await self.add_reactions(notifications_message, "notifications")
+        await self.add_reactions(msg, role_type)
+        return msg
 
-        await ctx.send("Server customization complete!")
+    @commands.command(name="server_customization")
+    async def server_customization(self, ctx):
+        # Delete the command message to keep channels clean (best effort)
+        try:
+            await ctx.message.delete()
+        except (discord.NotFound, discord.Forbidden):
+            pass
 
-    @commands.command(name='update_rolls')
-    async def update_rolls(self, ctx):
+        rolls_channel = self.bot.get_channel(config.ROLLS_CHANNEL)
+        if rolls_channel is None:
+            await ctx.send("Invalid channel ID in the config file.", delete_after=30)
+            return
+
+        # Reload rolls.json in case it was edited while bot was running
         self.rolls_data = self.load_rolls()
-        await ctx.send("Rolls data updated from file.")
+
+        # Ensure panels exist (edit existing instead of reposting)
+        await self._ensure_panel(rolls_channel, "color", "color_roles_message_id")
+        await self._ensure_panel(rolls_channel, "channels", "channels_roles_message_id")
+        await self._ensure_panel(rolls_channel, "notifications", "notifications_roles_message_id")
+
+        await ctx.send("Server customization panels are set.", delete_after=30)
+
+    @commands.command(name="update_rolls")
+    async def update_rolls(self, ctx):
+        """Reload the latest rolls.json file manually."""
+        try:
+            await ctx.message.delete()
+        except (discord.NotFound, discord.Forbidden):
+            pass
+
+        self.rolls_data = self.load_rolls()
+        await ctx.send("Rolls data updated from file.", delete_after=30)
 
     async def create_role_embed(self, role_type):
         role_data = self.rolls_data.get(role_type, {})
@@ -83,7 +119,10 @@ class ServerCustomization(commands.Cog):
     async def add_reactions(self, message, role_type):
         options = self.rolls_data.get(role_type, {}).get("options", {})
         for emoji in options.keys():
-            await message.add_reaction(emoji)
+            try:
+                await message.add_reaction(emoji)
+            except Exception:
+                pass
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -92,11 +131,10 @@ class ServerCustomization(commands.Cog):
 
         self.rolls_data = self.load_rolls()
         message_id = reaction.message.id
-
         if message_id in (
             self.rolls_data.get("color_roles_message_id"),
             self.rolls_data.get("channels_roles_message_id"),
-            self.rolls_data.get("notifications_roles_message_id"),
+            self.rolls_data.get("notifications_roles_message_id")
         ):
             await self.handle_reaction(reaction, user, "add")
 
@@ -107,11 +145,10 @@ class ServerCustomization(commands.Cog):
 
         self.rolls_data = self.load_rolls()
         message_id = reaction.message.id
-
         if message_id in (
             self.rolls_data.get("color_roles_message_id"),
             self.rolls_data.get("channels_roles_message_id"),
-            self.rolls_data.get("notifications_roles_message_id"),
+            self.rolls_data.get("notifications_roles_message_id")
         ):
             await self.handle_reaction(reaction, user, "remove")
 
@@ -157,9 +194,9 @@ class ServerCustomization(commands.Cog):
     def get_role_type_from_emoji(self, emoji):
         if emoji in self.rolls_data.get("color", {}).get("options", {}):
             return "color"
-        if emoji in self.rolls_data.get("channels", {}).get("options", {}):
+        elif emoji in self.rolls_data.get("channels", {}).get("options", {}):
             return "channels"
-        if emoji in self.rolls_data.get("notifications", {}).get("options", {}):
+        elif emoji in self.rolls_data.get("notifications", {}).get("options", {}):
             return "notifications"
         return None
 
