@@ -51,7 +51,6 @@ def load_economy(identity: EconomyIdentity) -> dict:
             "wordle_streak": 0,
             "connect4_streak": 0,
             "battleship_streak": 0,
-            "rolls": [],
             "xp": 0,
             "level": 1
         }
