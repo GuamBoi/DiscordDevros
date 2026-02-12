@@ -42,7 +42,26 @@ DEFAULT_CURRENCY_TAKE = 100       # Default value removing currency
 GAME_WIN = 50                     # Game won currency value
 GAME_LOSE = 25                    # Game lost currency value
 
-# Channel Specifications (Defined directly in config.py, not from .env)
+## Shop Values
+# Price maps for profile cosmetics (used by cogs/shop.py)
+SHOP_FRAME_PRICES = {
+    "red": 100,
+    "orange": 100,
+    "yellow": 100,
+    "green": 100,
+    "blue": 100,
+    "purple": 100,
+}
+
+SHOP_COLOR_PRICES = {
+    "red": 100,
+    "orange": 100,
+    "yellow": 100,
+    "green": 100,
+    "blue": 100,
+    "purple": 100,
+}
+
 ## Game Channels
 INVITE_CHANNEL = 1036762745527357450         # Set Game Invite Channel ID
 WORDLE_CHANNEL = 1209772800492179526         # Set Wordle Game Channel
