@@ -3,7 +3,7 @@ import io
 import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw  # Pillow installed
-
+from config import SHOP_FRAME_PRICES, SHOP_COLOR_PRICES
 from utils.embed import create_embed
 from utils.economy import get_balance, remove_currency
 from utils.shop import (
@@ -32,22 +32,31 @@ PROFILE_FRAMES_DIR = DEFAULT_PROFILE_FRAMES_DIR
 # ============================================================
 
 SHOP_FRAMES = {
-    "red": {"price": 100},
-    "orange": {"price": 100},
-    "yellow": {"price": 100},
-    "green": {"price": 100},
-    "blue": {"price": 100},
-    "purple": {"price": 100},
+    frame_id: {"price": int(price)}
+    for frame_id, price in SHOP_FRAME_PRICES.items()
 }
 
 # User-facing name -> internal hex
+
+COLOR_HEX_BY_NAME = {
+    "red": "#832e2c",
+    "orange": "#a95e3f",
+    "yellow": "#bfa066",
+    "green": "#5b6d61",
+    "blue": "#3d5361",
+    "purple": "#6b5b7b",
+}
+
+_missing_color_prices = sorted(set(COLOR_HEX_BY_NAME) - set(SHOP_COLOR_PRICES))
+if _missing_color_prices:
+    raise ValueError(
+        "Missing SHOP_COLOR_PRICES entries in config.py for: "
+        + ", ".join(_missing_color_prices)
+    )
+
 SHOP_COLORS = {
-    "red":    {"hex": "#832e2c", "price": 100},
-    "orange": {"hex": "#a95e3f", "price": 100},
-    "yellow": {"hex": "#bfa066", "price": 100},
-    "green":  {"hex": "#5b6d61", "price": 100},
-    "blue":   {"hex": "#3d5361", "price": 100},
-    "purple": {"hex": "#6b5b7b", "price": 100},
+    name: {"hex": color_hex, "price": int(SHOP_COLOR_PRICES[name])}
+    for name, color_hex in COLOR_HEX_BY_NAME.items()
 }
 
 # Reverse lookup: hex -> name (useful for inventory display)
