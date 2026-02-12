@@ -1,9 +1,8 @@
 import discord
 from discord.ext import commands
-
 from utils.economy import load_economy, save_economy, add_currency, remove_currency, user_key
 from utils.embed import create_embed
-from config import BETTING_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
+from config import ECONOMY_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
 
 
 class BetCog(commands.Cog):
@@ -78,7 +77,7 @@ class BetCog(commands.Cog):
             color=discord.Color.green()
         )
 
-        bet_channel = self.bot.get_channel(BETTING_CHANNEL)
+        bet_channel = self.bot.get_channel(ECONOMY_CHANNEL)
         bet_msg = await bet_channel.send(embed=bet_embed)
         await bet_msg.add_reaction("✅")
         await bet_msg.add_reaction("❌")
@@ -123,7 +122,7 @@ class BetCog(commands.Cog):
             color=discord.Color.green()
         )
 
-        betting_channel = self.bot.get_channel(BETTING_CHANNEL)
+        betting_channel = self.bot.get_channel(ECONOMY_CHANNEL)
         await betting_channel.send(embed=resolution_embed)
 
     @commands.command()
@@ -250,7 +249,6 @@ class BetCog(commands.Cog):
                         await self.resolve_bet(ctx, winner, loser, amount, bet_explanation)
                         del self.agreement_phase[message_id]
                         return
-
 
 async def setup(bot):
     await bot.add_cog(BetCog(bot))
