@@ -14,7 +14,7 @@ OPENWEBUI_API_URL = os.getenv("OPENWEBUI_API_URL")     # Pulled from .env file
 
 # Non-sensitive settings (Additional bot settings that are okay to share)
 COMMAND_PREFIX = "!"                  # Change value if you want different prefix.
-MODEL_NAME = "discorddevros"          # Set your model name here.
+MODEL_NAME = "discorddevros"          # Set your model name from OpenWebUI here.
 ECONOMY_FOLDER = "data/economy"       # Folder where server members economy files are saved
 
 # Bot Info
