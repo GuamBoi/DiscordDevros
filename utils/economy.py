@@ -1,7 +1,7 @@
 import os
 import json
 import time
-import asyncio
+import threading
 from json import JSONDecodeError
 from typing import Union, Optional
 import discord
@@ -15,27 +15,33 @@ from config import (
 EconomyIdentity = Union[str, discord.abc.User]  # str = user_id, or a Member/User
 
 # One lock per user_id to prevent concurrent writes in-process
-_USER_LOCKS: dict[str, asyncio.Lock] = {}
+_USER_LOCKS: dict[str, threading.Lock] = {}
+
 
 def user_key(member: discord.abc.User) -> str:
     return str(member.id)
 
+
 def _key_of(identity: EconomyIdentity) -> str:
     return identity if isinstance(identity, str) else user_key(identity)
+
 
 def _member_of(identity: EconomyIdentity) -> Optional[discord.abc.User]:
     return identity if not isinstance(identity, str) else None
 
-def _lock_for(user_id: str) -> asyncio.Lock:
+
+def _lock_for(user_id: str) -> threading.Lock:
     lock = _USER_LOCKS.get(user_id)
     if lock is None:
-        lock = asyncio.Lock()
+        lock = threading.Lock()
         _USER_LOCKS[user_id] = lock
     return lock
+
 
 def get_user_file(identity: EconomyIdentity) -> str:
     key = _key_of(identity)
     return os.path.join(ECONOMY_FOLDER, f"{key}.json")
+
 
 def _default_economy_schema(user_id: str) -> dict:
     return {
@@ -48,8 +54,9 @@ def _default_economy_schema(user_id: str) -> dict:
         "connect4_streak": 0,
         "battleship_streak": 0,
         "xp": 0,
-        "level": 1
+        "level": 1,
     }
+
 
 def _coerce_schema(data: dict, user_id: str) -> tuple[dict, bool]:
     """
@@ -68,12 +75,10 @@ def _coerce_schema(data: dict, user_id: str) -> tuple[dict, bool]:
             data[k] = v
             changed = True
 
-    # Always ensure canonical ID
     if data.get("user_id") != user_id:
         data["user_id"] = user_id
         changed = True
 
-    # Coerce numeric fields safely
     def _coerce_int(field: str, default: int, min_value: Optional[int] = None):
         nonlocal changed
         try:
@@ -94,7 +99,6 @@ def _coerce_schema(data: dict, user_id: str) -> tuple[dict, bool]:
     _coerce_int("xp", 0, 0)
     _coerce_int("level", 1, 1)
 
-    # Keep label fields nullable strings
     for field in ("username", "display_name"):
         if data.get(field) is not None and not isinstance(data[field], str):
             data[field] = str(data[field])
@@ -102,17 +106,15 @@ def _coerce_schema(data: dict, user_id: str) -> tuple[dict, bool]:
 
     return data, changed
 
-async def load_economy(identity: EconomyIdentity) -> dict:
-    """
-    Async load to allow locking.
-    """
+
+def load_economy(identity: EconomyIdentity) -> dict:
     os.makedirs(ECONOMY_FOLDER, exist_ok=True)
 
     user_id = _key_of(identity)
     member = _member_of(identity)
     path = get_user_file(user_id)
 
-    async with _lock_for(user_id):
+    with _lock_for(user_id):
         data = None
         changed = False
 
@@ -123,7 +125,6 @@ async def load_economy(identity: EconomyIdentity) -> dict:
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
             except (JSONDecodeError, ValueError):
-                # Quarantine corrupt file
                 try:
                     corrupt_path = f"{path}.corrupt.{int(time.time())}"
                     os.replace(path, corrupt_path)
@@ -138,7 +139,6 @@ async def load_economy(identity: EconomyIdentity) -> dict:
         data, coerced_changed = _coerce_schema(data, user_id)
         changed = changed or coerced_changed
 
-        # Only update username/display_name if we have a member AND it actually changed
         if member is not None:
             new_username = getattr(member, "name", None)
             new_display = getattr(member, "display_name", None)
@@ -149,23 +149,19 @@ async def load_economy(identity: EconomyIdentity) -> dict:
                 data["display_name"] = new_display
                 changed = True
 
-        # IMPORTANT: only write if we had to create/fix/update anything
         if changed:
-            await save_economy(user_id, data)
+            save_economy(user_id, data)
 
         return data
 
-async def save_economy(identity: EconomyIdentity, data: dict) -> None:
-    """
-    Atomic write (tmp + fsync + replace).
-    """
+
+def save_economy(identity: EconomyIdentity, data: dict) -> None:
     os.makedirs(ECONOMY_FOLDER, exist_ok=True)
 
     user_id = _key_of(identity)
     path = get_user_file(user_id)
     tmp_path = f"{path}.tmp"
 
-    # file write is sync, but guarded by lock above
     with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
         f.flush()
@@ -173,25 +169,29 @@ async def save_economy(identity: EconomyIdentity, data: dict) -> None:
 
     os.replace(tmp_path, path)
 
-async def add_currency(identity: EconomyIdentity, amount=DEFAULT_CURRENCY_GIVE) -> int:
-    data = await load_economy(identity)
+
+def add_currency(identity: EconomyIdentity, amount=DEFAULT_CURRENCY_GIVE) -> int:
+    data = load_economy(identity)
     data["currency"] = int(data.get("currency", 0) or 0) + int(amount)
-    await save_economy(data["user_id"], data)
+    save_economy(data["user_id"], data)
     return data["currency"]
 
-async def remove_currency(identity: EconomyIdentity, amount=DEFAULT_CURRENCY_TAKE) -> int:
-    data = await load_economy(identity)
+
+def remove_currency(identity: EconomyIdentity, amount=DEFAULT_CURRENCY_TAKE) -> int:
+    data = load_economy(identity)
     current = int(data.get("currency", 0) or 0)
     data["currency"] = max(0, current - int(amount))
-    await save_economy(data["user_id"], data)
+    save_economy(data["user_id"], data)
     return data["currency"]
 
-async def get_balance(identity: EconomyIdentity) -> int:
-    data = await load_economy(identity)
+
+def get_balance(identity: EconomyIdentity) -> int:
+    data = load_economy(identity)
     return int(data.get("currency", 0) or 0)
 
-async def add_xp(identity: EconomyIdentity, amount: int):
-    data = await load_economy(identity)
+
+def add_xp(identity: EconomyIdentity, amount: int):
+    data = load_economy(identity)
     data["xp"] = int(data.get("xp", 0) or 0) + int(amount)
     data["level"] = max(1, int(data.get("level", 1) or 1))
 
@@ -204,5 +204,5 @@ async def add_xp(identity: EconomyIdentity, amount: int):
         data["currency"] = int(data.get("currency", 0) or 0) + reward
         leveled_up = True
 
-    await save_economy(data["user_id"], data)
+    save_economy(data["user_id"], data)
     return leveled_up, data["level"]
