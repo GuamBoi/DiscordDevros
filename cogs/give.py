@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from utils.economy import add_currency, remove_currency, get_balance, user_key
 from utils.embed import create_embed
-from config import DEFAULT_CURRENCY_GIVE, BETTING_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
+from config import DEFAULT_CURRENCY_GIVE, ECONOMY_CHANNEL, CURRENCY_NAME, CURRENCY_SYMBOL
 
 class EconomyGive(commands.Cog):
     def __init__(self, bot):
@@ -51,7 +51,7 @@ class EconomyGive(commands.Cog):
         embed_result = create_embed(title, description)
         embed = await embed_result if hasattr(embed_result, "__await__") else embed_result
 
-        # Send the result to the betting channel or fallback to the current channel
+        # Send the result to the ECONOMY channel or fallback to the current channel
         channel = self.bot.get_channel(ECONOMY_CHANNEL)
         if channel:
             await channel.send(embed=embed)
