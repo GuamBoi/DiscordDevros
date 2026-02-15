@@ -27,7 +27,6 @@ MODERATOR_ROLE_ID = 1035393475631394896      # Role ID for server mods
 # XP Values
 ENABLE_XP_SYSTEM = True           # Set to False to disable XP System
 SHOW_LEVEL_UP_MESSAGES = True     # Set to False to disable level up messages
-XP_NOTIFICATION_CHANNEL_ID = None  # Replace with your actual channel ID, or set to None to use current channel
 XP_PER_MESSAGE =  1               # XP gained from regular messages
 XP_PER_REACTION = 1               # XP gained from reacting to messages
 XP_PER_COMMAND = 5                # XP gained from using Devros commands
@@ -74,3 +73,4 @@ GOODBYE_CHANNEL = 1206374744719626361        # Set Goodbye Channel ID
 HELP_COMMAND_CHANNEL_CATEGORY = 1036929287346999326
 ROLLS_CHANNEL = 1036732354426843146          # Set Roll Selection Channel ID
 ECONOMY_CHANNEL = 1351377151676518483        # Set the Economy Channel ID (used in cogs/ bet & give)
+XP_NOTIFICATION_CHANNEL_ID = None  # Replace with your actual channel ID, or set to None to use current channel
